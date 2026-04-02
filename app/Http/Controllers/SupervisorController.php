@@ -81,10 +81,12 @@ class SupervisorController extends Controller
     {
         $user = $request->user();
 
-        // Verify supervisor owns the team member
-        $subordinateIds = $user->subordinates()->pluck('id');
-        if (!$subordinateIds->contains($leave->user_id)) {
-            abort(403, 'Anda tidak memiliki akses untuk menyetujui izin ini.');
+        // Verify supervisor owns the team member (Skip if Admin)
+        if (!$user->hasRole('admin')) {
+            $subordinateIds = $user->subordinates()->pluck('id');
+            if (!$subordinateIds->contains($leave->user_id)) {
+                abort(403, 'Anda tidak memiliki akses untuk menyetujui izin ini.');
+            }
         }
 
         if (!$leave->isPending()) {
@@ -106,10 +108,12 @@ class SupervisorController extends Controller
     {
         $user = $request->user();
 
-        // Verify supervisor owns the team member
-        $subordinateIds = $user->subordinates()->pluck('id');
-        if (!$subordinateIds->contains($leave->user_id)) {
-            abort(403, 'Anda tidak memiliki akses untuk menolak izin ini.');
+        // Verify supervisor owns the team member (Skip if Admin)
+        if (!$user->hasRole('admin')) {
+            $subordinateIds = $user->subordinates()->pluck('id');
+            if (!$subordinateIds->contains($leave->user_id)) {
+                abort(403, 'Anda tidak memiliki akses untuk menolak izin ini.');
+            }
         }
 
         if (!$leave->isPending()) {

@@ -12,14 +12,25 @@ class OfficeController extends Controller
     /**
      * Display a listing of offices.
      */
-    public function index()
+    public function index(Request $request)
     {
         $offices = Office::withCount('users')
+            ->when($request->search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
             ->orderByDesc('created_at')
-            ->paginate(10);
+            ->paginate(12)
+            ->withQueryString();
+
+        $stats = [
+            'total' => Office::count(),
+            'avg_radius' => round(Office::avg('radius_meters') ?? 0),
+        ];
 
         return Inertia::render('Admin/Offices/Index', [
             'offices' => $offices,
+            'stats' => $stats,
+            'filters' => $request->only('search'),
         ]);
     }
 

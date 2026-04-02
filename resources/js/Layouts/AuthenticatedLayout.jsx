@@ -18,7 +18,7 @@ const navigation = {
         { name: 'Dashboard', href: 'dashboard', icon: '📊' },
         { name: 'Kelola User', href: 'admin.users.index', icon: '👤' },
         { name: 'Kelola Kantor', href: 'admin.offices.index', icon: '🏢' },
-        { name: 'Tim', href: 'supervisor.team', icon: '👥' },
+        { name: 'Monitor Tim', href: 'admin.team', icon: '👥' },
     ],
 };
 

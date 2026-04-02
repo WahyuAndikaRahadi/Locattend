@@ -56,6 +56,37 @@ class DashboardController extends Controller
             $data['totalOffices'] = \App\Models\Office::count();
             $data['todayTotalAttendance'] = \App\Models\Attendance::whereDate('date', today())->count();
             $data['totalPendingLeaves'] = \App\Models\Leave::where('status', 'pending')->count();
+
+            // Additional Admin Analytics
+            // Recent Activities (Latest 5 attendances)
+            $data['recentActivities'] = \App\Models\Attendance::with('user')
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(fn($att) => [
+                    'id' => $att->id,
+                    'user_name' => $att->user->name,
+                    'time' => $att->clock_in_time,
+                    'status' => $att->status,
+                    'location' => $att->latitude . ',' . $att->longitude
+                ]);
+
+            // Attendance Trend (Last 7 days)
+            $trends = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $date = now()->subDays($i)->toDateString();
+                $count = \App\Models\Attendance::whereDate('date', $date)->count();
+                $trends[] = [
+                    'date' => now()->subDays($i)->isoFormat('ddd'),
+                    'count' => $count
+                ];
+            }
+            $data['attendanceTrends'] = $trends;
+
+            // Late Comers Count
+            $data['lateComersCount'] = \App\Models\Attendance::whereDate('date', today())
+                ->where('status', 'terlambat')
+                ->count();
         }
 
         return Inertia::render('Dashboard', $data);

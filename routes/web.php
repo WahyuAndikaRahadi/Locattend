@@ -47,6 +47,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Admin routes
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/team', [UserController::class, 'team'])->name('team');
         Route::resource('users', UserController::class);
         Route::resource('offices', OfficeController::class);
     });
