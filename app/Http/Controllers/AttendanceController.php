@@ -23,7 +23,7 @@ class AttendanceController extends Controller
 
         $recentAttendances = $user->attendances()
             ->orderByDesc('date')
-            ->limit(10)
+            ->limit(30)
             ->get();
 
         return Inertia::render('Attendance/Index', [
@@ -87,6 +87,7 @@ class AttendanceController extends Controller
             'long_in' => $lng,
         ]);
 
+        $status = 'hadir';
         $statusLabels = [
             'hadir' => 'Hadir',
         ];

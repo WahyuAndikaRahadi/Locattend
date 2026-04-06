@@ -38,7 +38,9 @@ export default function AdminLeaves({ pendingLeaves, processedLeaves }) {
                     <div className="lg:col-span-2 space-y-6">
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                                <span className="w-10 h-10 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center font-bold">⏳</span>
+                                <span className="w-10 h-10 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </span>
                                 Menunggu Persetujuan
                             </h3>
                             <span className="px-4 py-1.5 bg-amber-100 text-amber-700 rounded-xl text-[10px] font-black uppercase tracking-widest">
@@ -72,7 +74,7 @@ export default function AdminLeaves({ pendingLeaves, processedLeaves }) {
                                                         </p>
                                                     </div>
                                                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm border border-slate-100">
-                                                        📅
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                                     </div>
                                                 </div>
                                             </div>
@@ -100,10 +102,14 @@ export default function AdminLeaves({ pendingLeaves, processedLeaves }) {
                                     </div>
                                 ))}                            </div>
                         ) : (
-                            <div className="bg-white p-20 rounded-[2.5rem] border border-slate-100 shadow-sm text-center opacity-40">
-                                <p className="text-5xl mb-6">🏜️</p>
-                                <p className="text-lg font-black uppercase tracking-widest text-slate-900">Tidak ada pengajuan pending</p>
-                                <p className="text-slate-500 font-medium mt-2">Semua permintaan izin supervisor telah diproses.</p>
+                            <div className="bg-white p-20 rounded-[2.5rem] border border-slate-100 shadow-sm text-center">
+                                <div className="opacity-40 flex flex-col items-center">
+                                    <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mb-6">
+                                        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+                                    </div>
+                                    <p className="text-lg font-black uppercase tracking-widest text-slate-900">Semua Terproses</p>
+                                    <p className="text-slate-500 font-medium mt-2">Seluruh pengajuan izin supervisor telah ditinjau.</p>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -112,7 +118,9 @@ export default function AdminLeaves({ pendingLeaves, processedLeaves }) {
                     <div className="space-y-6">
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                                <span className="w-10 h-10 bg-slate-50 text-slate-600 rounded-2xl flex items-center justify-center font-bold">📜</span>
+                                <span className="w-10 h-10 bg-slate-50 text-slate-600 rounded-2xl flex items-center justify-center">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                                </span>
                                 Riwayat Terakhir
                             </h3>
                         </div>

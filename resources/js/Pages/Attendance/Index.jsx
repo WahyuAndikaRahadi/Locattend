@@ -54,10 +54,16 @@ export default function AttendanceIndex({ office, todayAttendance, recentAttenda
         post(route('attendance.clockIn'));
     };
 
-    const statusLabels = {
-        hadir: { text: 'Hadir', color: 'bg-accent-100 text-accent-700' },
-        hampir_terlambat: { text: 'Hampir Terlambat', color: 'bg-amber-100 text-amber-700' },
-        terlambat: { text: 'Terlambat', color: 'bg-red-100 text-red-700' },
+    const statusConfig = {
+        hadir: { label: 'Hadir', color: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500', icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg> },
+        izin: { label: 'Izin', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500', icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> },
+        alpha: { label: 'Alpha', color: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400', icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg> },
+    };
+
+    const formatDate = (dateStr) => {
+        return new Date(dateStr).toLocaleDateString('id-ID', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        });
     };
 
     return (
@@ -66,97 +72,173 @@ export default function AttendanceIndex({ office, todayAttendance, recentAttenda
 
             <div className="max-w-4xl mx-auto space-y-6">
                 {todayAttendance ? (
-                    <div className="glass-card p-8 text-center animate-slide-up">
-                        <div className="w-20 h-20 bg-gradient-to-br from-accent-400 to-accent-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-accent-500/30">
-                            <span className="text-4xl">✅</span>
+                    <div className="bg-white rounded-[2.5rem] p-10 text-center border border-slate-100 shadow-2xl shadow-blue-500/10 animate-fade-in relative overflow-hidden group">
+                        {/* Decorative background element */}
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+                        <div className="absolute -right-12 -top-12 w-48 h-48 bg-blue-50 rounded-full opacity-50 group-hover:scale-110 transition-transform duration-700"></div>
+                        
+                        <div className="relative z-10">
+                            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-emerald-500/20 group-hover:rotate-6 transition-transform">
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+                            </div>
+                            <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Presensi Berhasil!</h2>
+                            <p className="text-slate-500 font-medium mb-6">Kamu telah tercatat masuk untuk hari ini.</p>
+                            
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                <div className="px-6 py-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
+                                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span className="text-sm font-black text-slate-700 ont-mono">{todayAttendance.clock_in_time}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className={`inline-flex px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-sm ${statusConfig[todayAttendance.status]?.color}`}>
+                                        {statusConfig[todayAttendance.status]?.label}
+                                    </span>
+                                    {office?.working_hour_start && todayAttendance.clock_in_time > office.working_hour_start && (
+                                        <span className="inline-flex px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-sm bg-rose-50 text-rose-500 border border-rose-100 italic">
+                                            Terlambat
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        <h2 className="text-2xl font-bold text-dark-900 mb-2">Anda Sudah Absen Hari Ini</h2>
-                        <p className="text-dark-500 mb-4">Jam Masuk: {todayAttendance.clock_in_time}</p>
-                        <span className={`inline-flex px-4 py-2 text-sm font-semibold rounded-full ${statusLabels[todayAttendance.status]?.color}`}>
-                            {statusLabels[todayAttendance.status]?.text}
-                        </span>
                     </div>
                 ) : (
                     <div className="animate-slide-up space-y-6">
-                        <div className="glass-card p-6">
-                            <h2 className="text-xl font-bold text-dark-900 mb-4">📍 Absensi GPS</h2>
-                            <p className="text-dark-500 mb-6">Ambil lokasi Anda lalu klik Clock In untuk melakukan absensi.</p>
+                        <div className="grid grid-cols-1 gap-6">
+                            <div className="bg-white rounded-[2.5rem] p-8 border border-white shadow-2xl shadow-blue-500/5">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">Absensi GPS</h2>
+                                        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Validasi Lokasi Kerja</p>
+                                    </div>
+                                </div>
 
-                            {/* Map Container */}
-                            <div className="w-full h-72 sm:h-96 bg-dark-100 rounded-2xl mb-6 overflow-hidden relative border border-dark-200">
-                                {position ? (
-                                    <Suspense fallback={
-                                        <div className="flex items-center justify-center h-full">
-                                            <div className="text-center">
-                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                                                <p className="text-sm text-dark-500">Memuat Peta...</p>
+                                {/* Map Container */}
+                                <div className="w-full h-80 sm:h-96 bg-slate-50 rounded-[2rem] mb-8 overflow-hidden relative border border-slate-100 shadow-inner group">
+                                    {position ? (
+                                        <Suspense fallback={
+                                            <div className="flex items-center justify-center h-full">
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Memuat Peta...</p>
+                                                </div>
+                                            </div>
+                                        }>
+                                            <MapSection position={position} office={office} />
+                                        </Suspense>
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-slate-300">
+                                            <div className="text-center group-hover:scale-105 transition-transform duration-500">
+                                                <div className="w-20 h-20 bg-slate-100 rounded-[2rem] flex items-center justify-center mx-auto mb-4 border border-slate-200">
+                                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
+                                                </div>
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em]">Ambil Lokasi Terlebih Dahulu</p>
                                             </div>
                                         </div>
-                                    }>
-                                        <MapSection position={position} office={office} />
-                                    </Suspense>
-                                ) : (
-                                    <div className="flex items-center justify-center h-full text-dark-400 bg-dark-50">
-                                        <div className="text-center">
-                                            <span className="text-4xl block mb-2 opacity-50">🗺️</span>
-                                            <p className="text-sm">Klik "Ambil Lokasi" untuk menampilkan peta</p>
-                                        </div>
+                                    )}
+                                </div>
+
+                            {/* Action Buttons */}
+                                <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                                    <button
+                                        type="button"
+                                        onClick={getLocation}
+                                        disabled={gettingLocation}
+                                        className="bg-white hover:bg-slate-50 text-slate-700 font-black text-xs uppercase tracking-[0.15em] py-4 px-8 rounded-2xl border border-slate-200 transition-all flex-1 flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                                    >
+                                        {gettingLocation ? (
+                                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        ) : (
+                                            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                        )}
+                                        {gettingLocation ? 'Mencari...' : 'Ambil Lokasi'}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleClockIn}
+                                        disabled={!position || processing}
+                                        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs uppercase tracking-[0.15em] py-4 px-8 rounded-2xl transition-all shadow-xl shadow-blue-500/25 flex-1 flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group"
+                                    >
+                                        {processing ? (
+                                            <svg className="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        ) : (
+                                            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+                                        )}
+                                        {processing ? 'Memproses...' : 'Submit Presensi'}
+                                    </button>
+                                </div>
+                                
+                                {/* Error Message */}
+                                {(locationError || errors.location || errors.attendance) && (
+                                    <div className="px-6 py-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-3 text-rose-600">
+                                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        <p className="text-sm font-bold">{locationError || errors.location || errors.attendance}</p>
                                     </div>
                                 )}
                             </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <button
-                                    type="button"
-                                    onClick={getLocation}
-                                    disabled={gettingLocation}
-                                    className="bg-white hover:bg-dark-50 text-dark-700 font-bold py-3 px-6 rounded-xl border border-dark-200 transition-all flex-1"
-                                >
-                                    {gettingLocation ? '⏳ Mencari...' : '📍 Ambil Lokasi'}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleClockIn}
-                                    disabled={!position || processing}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-all flex-1 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
-                                >
-                                    {processing ? '⏳ Memproses...' : '✅ Clock In'}
-                                </button>
-                            </div>
-                            
-                            {/* Error Message */}
-                            {(locationError || errors.location || errors.attendance) && (
-                                <p className="mt-4 text-sm text-red-600 font-medium">
-                                    ❌ {locationError || errors.location || errors.attendance}
-                                </p>
-                            )}
                         </div>
                     </div>
                 )}
 
                 {/* Recent History Table */}
-                <div className="glass-card p-6">
-                    <h3 className="text-lg font-bold text-dark-900 mb-4">📋 Riwayat Terakhir</h3>
+                {/* Riwayat Absensi Terintegrasi */}
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden">
+                    <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-slate-50 text-slate-500 rounded-xl flex items-center justify-center">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                            </div>
+                            <h3 className="text-xl font-black text-slate-900 tracking-tight">Riwayat Presensi</h3>
+                        </div>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg">
+                            30 Hari Terakhir
+                        </span>
+                    </div>
+
                     {recentAttendances?.length > 0 ? (
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
+                            <table className="w-full">
                                 <thead>
-                                    <tr className="border-b border-dark-100">
-                                        <th className="text-left py-3 px-4 text-dark-600">Tanggal</th>
-                                        <th className="text-left py-3 px-4 text-dark-600">Jam</th>
-                                        <th className="text-left py-3 px-4 text-dark-600">Status</th>
+                                    <tr className="bg-slate-50/50">
+                                        <th className="text-left px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hari & Tanggal</th>
+                                        <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Waktu Masuk</th>
+                                        <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-slate-50">
                                     {recentAttendances.map((att) => (
-                                        <tr key={att.id} className="border-b border-dark-50 hover:bg-dark-50/50">
-                                            <td className="py-3 px-4">{att.date}</td>
-                                            <td className="py-3 px-4 font-mono">{att.clock_in_time}</td>
-                                            <td className="py-3 px-4">
-                                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${statusLabels[att.status]?.color}`}>
-                                                    {statusLabels[att.status]?.text}
+                                        <tr key={att.id} className="hover:bg-slate-50/80 transition-colors group">
+                                            <td className="px-8 py-5">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-black text-slate-900 leading-tight">
+                                                        {new Date(att.date).toLocaleDateString('id-ID', { weekday: 'long' })}
+                                                    </span>
+                                                    <span className="text-xs font-bold text-slate-400 mt-0.5">
+                                                        {new Date(att.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5 text-center">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 text-slate-700 rounded-xl font-black text-sm font-mono border border-slate-100 group-hover:border-blue-200 transition-colors">
+                                                        <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                        {att.clock_in_time.substring(0, 5)}
+                                                    </div>
+                                                    {office?.working_hour_start && att.clock_in_time > office.working_hour_start && (
+                                                        <span className="text-[9px] font-black uppercase tracking-wider text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded-md">
+                                                            Terlambat
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5 text-center">
+                                                <span className={`inline-flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm ${statusConfig[att.status]?.color}`}>
+                                                    {statusConfig[att.status]?.icon}
+                                                    {statusConfig[att.status]?.label}
                                                 </span>
                                             </td>
                                         </tr>
@@ -165,7 +247,12 @@ export default function AttendanceIndex({ office, todayAttendance, recentAttenda
                             </table>
                         </div>
                     ) : (
-                        <p className="text-dark-400 text-center py-4 italic text-sm">Belum ada riwayat absen.</p>
+                        <div className="py-20 text-center flex flex-col items-center">
+                            <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-2xl flex items-center justify-center mb-4">
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <p className="text-sm font-black text-slate-300 uppercase tracking-widest italic">Belum ada riwayat presensi</p>
+                        </div>
                     )}
                 </div>
             </div>

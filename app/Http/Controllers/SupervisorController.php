@@ -162,7 +162,7 @@ class SupervisorController extends Controller
             ->get()
             ->keyBy('user_id');
 
-        $dailyData = $subordinates->map(function ($member) use ($dailyAttendances, $dailyLeaves) {
+        $dailyData = $subordinates->map(function ($member) use ($dailyAttendances, $dailyLeaves, $date) {
             $attendance = $dailyAttendances->get($member->id);
             $leave = $dailyLeaves->get($member->id);
 

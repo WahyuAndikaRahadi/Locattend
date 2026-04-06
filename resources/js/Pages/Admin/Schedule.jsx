@@ -2,19 +2,35 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function AdminSchedule({ dailyData, monthlyData, selectedDate, selectedMonth, totalMembers }) {
+export default function AdminSchedule({ dailyData, monthlyData, selectedDate, selectedMonth, totalMembers, offices, filters }) {
     const [activeTab, setActiveTab] = useState('daily');
     const [date, setDate] = useState(selectedDate);
     const [month, setMonth] = useState(selectedMonth);
+    const [officeId, setOfficeId] = useState(filters?.office_id || '');
+
+    const handleFilterChange = (params) => {
+        const query = { 
+            date, 
+            month, 
+            office_id: officeId,
+            ...params 
+        };
+        router.get(route('admin.schedule'), query, { preserveState: true, replace: true });
+    };
 
     const handleDateChange = (newDate) => {
         setDate(newDate);
-        router.get(route('admin.schedule'), { date: newDate, month }, { preserveState: true, replace: true });
+        handleFilterChange({ date: newDate });
     };
 
     const handleMonthChange = (newMonth) => {
         setMonth(newMonth);
-        router.get(route('admin.schedule'), { date, month: newMonth }, { preserveState: true, replace: true });
+        handleFilterChange({ month: newMonth });
+    };
+
+    const handleOfficeChange = (newOfficeId) => {
+        setOfficeId(newOfficeId);
+        handleFilterChange({ office_id: newOfficeId });
     };
 
     const goToday = () => {
@@ -83,29 +99,35 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                 {/* Page Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">Jadwal Semua {totalMembers ? `(${totalMembers})` : ''}</h2>
+                        <h2 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Jadwal Semua {totalMembers ? `(${totalMembers})` : ''}
+                        </h2>
                         <p className="text-slate-500 mt-1 font-medium">Pantau kehadiran harian dan rekap bulanan seluruh karyawan & supervisor.</p>
                     </div>
+
                     <div className="flex items-center gap-1 bg-white rounded-2xl border border-slate-200 p-1.5 shadow-sm">
                         <button
                             onClick={() => setActiveTab('daily')}
-                            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+                            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
                                 activeTab === 'daily'
                                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
                                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                             }`}
                         >
-                            📅 Harian
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Harian
                         </button>
                         <button
                             onClick={() => setActiveTab('monthly')}
-                            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+                            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
                                 activeTab === 'monthly'
                                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
                                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                             }`}
                         >
-                            📊 Bulanan
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            Bulanan
                         </button>
                     </div>
                 </div>
@@ -143,6 +165,23 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-3">
+                                    {/* Office Filter Inside Bar */}
+                                    <div className="relative group mr-2">
+                                        <select 
+                                            value={officeId}
+                                            onChange={(e) => handleOfficeChange(e.target.value)}
+                                            className="pl-10 pr-8 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-100 transition-all cursor-pointer appearance-none min-w-[160px]"
+                                        >
+                                            <option value="">Semua Lokasi</option>
+                                            {offices?.map(o => (
+                                                <option key={o.id} value={o.id}>{o.name}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                        </div>
+                                    </div>
+
                                     <input
                                         type="date"
                                         value={date}
@@ -163,48 +202,40 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
 
                         {/* Daily Stats */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-                                        <span className="text-lg">✅</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-black text-slate-900">{dailyStats.hadir}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hadir</p>
-                                    </div>
+                            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex items-center gap-4 group hover:border-emerald-200 transition-all">
+                                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-black text-slate-900 leading-none">{dailyStats.hadir}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Hadir</p>
                                 </div>
                             </div>
-                            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
-                                        <span className="text-lg">⏰</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-black text-slate-900">{dailyStats.terlambat}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Terlambat</p>
-                                    </div>
+                            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex items-center gap-4 group hover:border-orange-200 transition-all">
+                                <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-all">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-black text-slate-900 leading-none">{dailyStats.terlambat}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Terlambat</p>
                                 </div>
                             </div>
-                            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
-                                        <span className="text-lg">📝</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-black text-slate-900">{dailyStats.izin}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Izin</p>
-                                    </div>
+                            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex items-center gap-4 group hover:border-amber-200 transition-all">
+                                <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-all">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-black text-slate-900 leading-none">{dailyStats.izin}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Izin</p>
                                 </div>
                             </div>
-                            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center">
-                                        <span className="text-lg">❌</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-black text-slate-900">{dailyStats.alpha}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Alpha</p>
-                                    </div>
+                            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex items-center gap-4 group hover:border-slate-300 transition-all">
+                                <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-slate-600 group-hover:text-white transition-all">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-black text-slate-900 leading-none">{dailyStats.alpha}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Alpha</p>
                                 </div>
                             </div>
                         </div>
@@ -270,9 +301,11 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                                 </table>
                             </div>
                             {(!dailyData || dailyData.length === 0) && (
-                                <div className="p-12 text-center text-slate-400">
-                                    <p className="text-4xl mb-3">👥</p>
-                                    <p className="font-bold">Belum ada pegawai</p>
+                                <div className="p-20 text-center text-slate-300">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                    </div>
+                                    <p className="font-black uppercase tracking-widest text-sm">Belum ada pegawai</p>
                                 </div>
                             )}
                         </div>
@@ -314,12 +347,31 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                                         </svg>
                                     </button>
                                 </div>
-                                <input
-                                    type="month"
-                                    value={month}
-                                    onChange={(e) => handleMonthChange(e.target.value)}
-                                    className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                <div className="flex items-center gap-3">
+                                    {/* Office Filter Inside Bar */}
+                                    <div className="relative group mr-2">
+                                        <select 
+                                            value={officeId}
+                                            onChange={(e) => handleOfficeChange(e.target.value)}
+                                            className="pl-10 pr-8 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-100 transition-all cursor-pointer appearance-none min-w-[160px]"
+                                        >
+                                            <option value="">Semua Lokasi</option>
+                                            {offices?.map(o => (
+                                                <option key={o.id} value={o.id}>{o.name}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                        </div>
+                                    </div>
+
+                                    <input
+                                        type="month"
+                                        value={month}
+                                        onChange={(e) => handleMonthChange(e.target.value)}
+                                        className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -351,26 +403,26 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                                         <tr className="bg-slate-50/80">
                                             <th className="text-left px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pegawai</th>
                                             <th className="text-center px-4 py-4 text-[10px] font-black text-emerald-500 uppercase tracking-widest">
-                                                <div className="flex flex-col items-center gap-0.5">
-                                                    <span>✅</span>
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
                                                     <span>Hadir</span>
                                                 </div>
                                             </th>
                                             <th className="text-center px-4 py-4 text-[10px] font-black text-orange-500 uppercase tracking-widest">
-                                                <div className="flex flex-col items-center gap-0.5">
-                                                    <span>⏰</span>
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                     <span>Terlambat</span>
                                                 </div>
                                             </th>
                                             <th className="text-center px-4 py-4 text-[10px] font-black text-amber-500 uppercase tracking-widest">
-                                                <div className="flex flex-col items-center gap-0.5">
-                                                    <span>📝</span>
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                                     <span>Izin</span>
                                                 </div>
                                             </th>
                                             <th className="text-center px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                                <div className="flex flex-col items-center gap-0.5">
-                                                    <span>❌</span>
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                                                     <span>Alpha</span>
                                                 </div>
                                             </th>
@@ -441,16 +493,20 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                                 </table>
                             </div>
                             {(!monthlyData || monthlyData.length === 0) && (
-                                <div className="p-12 text-center text-slate-400">
-                                    <p className="text-4xl mb-3">👥</p>
-                                    <p className="font-bold">Belum ada pegawai</p>
+                                <div className="p-20 text-center text-slate-300 flex flex-col items-center">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
+                                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                    </div>
+                                    <p className="font-black uppercase tracking-widest text-sm text-slate-300">Belum ada data pegawai</p>
                                 </div>
                             )}
                         </div>
 
                         {/* Note */}
                         <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
-                            <span className="text-blue-500 text-lg mt-0.5">💡</span>
+                            <span className="text-blue-500 mt-0.5">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </span>
                             <p className="text-sm text-blue-700 font-medium">
                                 <span className="font-bold">Catatan:</span> Karyawan yang terlambat tetap dihitung sebagai <strong>Hadir</strong>. 
                                 Kolom "Terlambat" menunjukkan berapa kali mereka datang melebihi jam masuk kantor.

@@ -23,8 +23,19 @@ class UserController extends Controller
     {
         $users = User::with(['roles', 'office:id,name', 'supervisor:id,name'])
             ->when($request->search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->role, function ($query, $role) {
+                $query->role($role);
+            })
+            ->when($request->office_id, function ($query, $officeId) {
+                $query->where('office_id', $officeId);
+            })
+            ->when($request->supervisor_id, function ($query, $supervisorId) {
+                $query->where('supervisor_id', $supervisorId);
             })
             ->orderByDesc('created_at')
             ->paginate(10)
@@ -40,8 +51,11 @@ class UserController extends Controller
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
-            'filters' => $request->only('search'),
+            'filters' => $request->only(['search', 'role', 'office_id', 'supervisor_id']),
             'stats' => $stats,
+            'offices' => Office::all(['id', 'name']),
+            'roles' => Role::all(['id', 'name']),
+            'supervisors' => User::role('supervisor')->get(['id', 'name']),
         ]);
     }
 
@@ -71,12 +85,18 @@ class UserController extends Controller
             'supervisor_id' => 'nullable|exists:users,id',
         ]);
 
+        $supervisor_id = $request->supervisor_id;
+        // Auto-clear manager if role is admin or supervisor
+        if (in_array($request->role, ['admin', 'supervisor'])) {
+            $supervisor_id = null;
+        }
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'office_id' => $request->office_id,
-            'supervisor_id' => $request->supervisor_id,
+            'supervisor_id' => $supervisor_id,
             'email_verified_at' => now(),
         ]);
 
@@ -116,11 +136,17 @@ class UserController extends Controller
             'supervisor_id' => 'nullable|exists:users,id',
         ]);
 
+        $supervisor_id = $request->supervisor_id;
+        // Auto-clear manager if role is admin or supervisor
+        if (in_array($request->role, ['admin', 'supervisor'])) {
+            $supervisor_id = null;
+        }
+
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
             'office_id' => $request->office_id,
-            'supervisor_id' => $request->supervisor_id,
+            'supervisor_id' => $supervisor_id,
         ]);
 
         if ($request->filled('password')) {
@@ -165,6 +191,7 @@ class UserController extends Controller
             
             if ($todayAttendance) {
                 $member->today_status = 'hadir';
+                $member->clock_in = $todayAttendance->clock_in_time;
             } else {
                 // Check for approved leave
                 $approvedLeave = Leave::where('user_id', $member->id)
@@ -313,10 +340,15 @@ class UserController extends Controller
      */
     public function schedule(Request $request)
     {
-        // Get all non-admin users
+        $office_id = $request->input('office_id');
+
+        // Get non-admin users with optional office filter
         $users = User::role(['karyawan', 'supervisor'])
             ->select('id', 'name', 'email', 'office_id')
-            ->with('office:id,working_hour_start,working_days')
+            ->when($office_id, function ($query, $officeId) {
+                $query->where('office_id', $officeId);
+            })
+            ->with(['office:id,name,working_hour_start,working_days'])
             ->get();
         
         $userIds = $users->pluck('id');
@@ -337,7 +369,7 @@ class UserController extends Controller
             ->get()
             ->keyBy('user_id');
 
-        $dailyData = $users->map(function ($member) use ($dailyAttendances, $dailyLeaves) {
+        $dailyData = $users->map(function ($member) use ($dailyAttendances, $dailyLeaves, $date) {
             $attendance = $dailyAttendances->get($member->id);
             $leave = $dailyLeaves->get($member->id);
 
@@ -451,6 +483,8 @@ class UserController extends Controller
             'selectedDate' => $selectedDate,
             'selectedMonth' => $selectedMonth,
             'totalMembers' => $userIds->count(),
+            'offices' => Office::all(['id', 'name'])->values(),
+            'filters' => $request->only(['office_id']),
         ]);
     }
 }

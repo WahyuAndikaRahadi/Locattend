@@ -89,23 +89,25 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
                     <div className="flex items-center gap-1 bg-white rounded-2xl border border-slate-200 p-1.5 shadow-sm">
                         <button
                             onClick={() => setActiveTab('daily')}
-                            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+                            className={`px-5 py-2.5 rounded-xl text-sm font-black transition-all duration-300 flex items-center gap-2 ${
                                 activeTab === 'daily'
                                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
                                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                             }`}
                         >
-                            📅 Harian
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Harian
                         </button>
                         <button
                             onClick={() => setActiveTab('monthly')}
-                            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+                            className={`px-5 py-2.5 rounded-xl text-sm font-black transition-all duration-300 flex items-center gap-2 ${
                                 activeTab === 'monthly'
                                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
                                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                             }`}
                         >
-                            📊 Bulanan
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            Bulanan
                         </button>
                     </div>
                 </div>
@@ -165,8 +167,8 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-                                        <span className="text-lg">✅</span>
+                                    <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
                                     </div>
                                     <div>
                                         <p className="text-2xl font-black text-slate-900">{dailyStats.hadir}</p>
@@ -176,8 +178,8 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
                             </div>
                             <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
-                                        <span className="text-lg">⏰</span>
+                                    <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     </div>
                                     <div>
                                         <p className="text-2xl font-black text-slate-900">{dailyStats.terlambat}</p>
@@ -187,8 +189,8 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
                             </div>
                             <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
-                                        <span className="text-lg">📝</span>
+                                    <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                     </div>
                                     <div>
                                         <p className="text-2xl font-black text-slate-900">{dailyStats.izin}</p>
@@ -198,8 +200,8 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
                             </div>
                             <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center">
-                                        <span className="text-lg">❌</span>
+                                    <div className="w-10 h-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </div>
                                     <div>
                                         <p className="text-2xl font-black text-slate-900">{dailyStats.alpha}</p>
@@ -270,9 +272,11 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
                                 </table>
                             </div>
                             {(!dailyData || dailyData.length === 0) && (
-                                <div className="p-12 text-center text-slate-400">
-                                    <p className="text-4xl mb-3">👥</p>
-                                    <p className="font-bold">Belum ada anggota tim</p>
+                                <div className="p-16 text-center text-slate-400 flex flex-col items-center">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 text-slate-300">
+                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    </div>
+                                    <p className="font-black uppercase tracking-[0.2em] text-[10px] text-slate-300">Tidak ada data untuk periode ini</p>
                                 </div>
                             )}
                         </div>
@@ -351,26 +355,26 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
                                         <tr className="bg-slate-50/80">
                                             <th className="text-left px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Karyawan</th>
                                             <th className="text-center px-4 py-4 text-[10px] font-black text-emerald-500 uppercase tracking-widest">
-                                                <div className="flex flex-col items-center gap-0.5">
-                                                    <span>✅</span>
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
                                                     <span>Hadir</span>
                                                 </div>
                                             </th>
                                             <th className="text-center px-4 py-4 text-[10px] font-black text-orange-500 uppercase tracking-widest">
-                                                <div className="flex flex-col items-center gap-0.5">
-                                                    <span>⏰</span>
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                     <span>Terlambat</span>
                                                 </div>
                                             </th>
                                             <th className="text-center px-4 py-4 text-[10px] font-black text-amber-500 uppercase tracking-widest">
-                                                <div className="flex flex-col items-center gap-0.5">
-                                                    <span>📝</span>
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                                     <span>Izin</span>
                                                 </div>
                                             </th>
                                             <th className="text-center px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                                <div className="flex flex-col items-center gap-0.5">
-                                                    <span>❌</span>
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg>
                                                     <span>Alpha</span>
                                                 </div>
                                             </th>
@@ -441,16 +445,20 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
                                 </table>
                             </div>
                             {(!monthlyData || monthlyData.length === 0) && (
-                                <div className="p-12 text-center text-slate-400">
-                                    <p className="text-4xl mb-3">👥</p>
-                                    <p className="font-bold">Belum ada anggota tim</p>
+                                <div className="p-16 text-center text-slate-400 flex flex-col items-center">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 text-slate-300">
+                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    </div>
+                                    <p className="font-black uppercase tracking-[0.2em] text-[10px] text-slate-300">Tidak ada data untuk periode ini</p>
                                 </div>
                             )}
                         </div>
 
                         {/* Note */}
-                        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
-                            <span className="text-blue-500 text-lg mt-0.5">💡</span>
+                        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex items-start gap-4">
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-500 shadow-sm flex-shrink-0">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
                             <p className="text-sm text-blue-700 font-medium">
                                 <span className="font-bold">Catatan:</span> Karyawan yang terlambat tetap dihitung sebagai <strong>Hadir</strong>. 
                                 Kolom "Terlambat" menunjukkan berapa kali mereka datang melebihi jam masuk kantor.

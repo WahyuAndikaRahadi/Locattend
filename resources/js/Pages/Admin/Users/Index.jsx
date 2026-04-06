@@ -16,12 +16,27 @@ const QuickStat = ({ label, value, icon, color, iconColor }) => (
     </div>
 );
 
-export default function AdminUsersIndex({ users, filters, stats }) {
-    const [search, setSearch] = useState(filters?.search || '');
+export default function AdminUsersIndex({ users, filters, stats, offices, roles, supervisors }) {
+    const [filterData, setFilterData] = useState({
+        search: filters?.search || '',
+        role: filters?.role || '',
+        office_id: filters?.office_id || '',
+        supervisor_id: filters?.supervisor_id || '',
+    });
+
+    const handleFilterChange = (key, value) => {
+        const newFilters = { ...filterData, [key]: value };
+        setFilterData(newFilters);
+        router.get(route('admin.users.index'), newFilters, { 
+            preserveState: true,
+            preserveScroll: true,
+            replace: true 
+        });
+    };
 
     const handleSearch = (e) => {
         e.preventDefault();
-        router.get(route('admin.users.index'), { search }, { preserveState: true });
+        router.get(route('admin.users.index'), filterData, { preserveState: true });
     };
 
     const handleDelete = (userId, userName) => {
@@ -88,23 +103,73 @@ export default function AdminUsersIndex({ users, filters, stats }) {
                     />
                 </div>
 
-                {/* Filter & Actions Bar */}
-                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-                    <form onSubmit={handleSearch} className="flex-1 relative w-full">
-                        <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-primary-400">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        </span>
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Cari nama karyawan atau email..."
-                            className="w-full pl-12 pr-4 py-3 bg-primary-50/50 border-none rounded-2xl text-slate-800 placeholder-primary-400 focus:bg-white focus:ring-4 focus:ring-primary-100 transition-all font-medium"
-                        />
-                    </form>
-                    <button type="submit" onClick={handleSearch} className="flex-1 md:flex-none px-10 py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-500/20 active:scale-95">
-                        Tampilkan
-                    </button>
+                {/* Advanced Filter Bar */}
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
+                    <div className="flex flex-col lg:flex-row gap-4">
+                        {/* Search Input */}
+                        <form onSubmit={handleSearch} className="flex-1 relative">
+                            <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-primary-400">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </span>
+                            <input
+                                type="text"
+                                value={filterData.search}
+                                onChange={(e) => setFilterData({...filterData, search: e.target.value})}
+                                placeholder="Cari nama karyawan atau email..."
+                                className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-4 focus:ring-primary-100 transition-all font-medium"
+                            />
+                        </form>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:w-3/5">
+                            {/* Role Filter */}
+                            <select 
+                                value={filterData.role}
+                                onChange={(e) => handleFilterChange('role', e.target.value)}
+                                className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl text-slate-700 font-bold focus:ring-4 focus:ring-primary-100 transition-all cursor-pointer appearance-none"
+                            >
+                                <option value="">Semua Hak Akses</option>
+                                {roles.map(role => (
+                                    <option key={role.id} value={role.name}>{role.name.toUpperCase()}</option>
+                                ))}
+                            </select>
+
+                            {/* Office Filter */}
+                            <select 
+                                value={filterData.office_id}
+                                onChange={(e) => handleFilterChange('office_id', e.target.value)}
+                                className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl text-slate-700 font-bold focus:ring-4 focus:ring-primary-100 transition-all cursor-pointer appearance-none"
+                            >
+                                <option value="">Semua Lokasi</option>
+                                {offices.map(office => (
+                                    <option key={office.id} value={office.id}>{office.name}</option>
+                                ))}
+                            </select>
+
+                            {/* Manager Filter */}
+                            <select 
+                                value={filterData.supervisor_id}
+                                onChange={(e) => handleFilterChange('supervisor_id', e.target.value)}
+                                className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl text-slate-700 font-bold focus:ring-4 focus:ring-primary-100 transition-all cursor-pointer appearance-none"
+                            >
+                                <option value="">Semua Manager</option>
+                                {supervisors.map(sup => (
+                                    <option key={sup.id} value={sup.id}>{sup.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                const reset = { search: '', role: '', office_id: '', supervisor_id: '' };
+                                setFilterData(reset);
+                                router.get(route('admin.users.index'), reset);
+                            }} 
+                            className="px-6 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
+                        >
+                            Reset
+                        </button>
+                    </div>
                 </div>
 
                 {/* Modern Table List */}
@@ -174,7 +239,11 @@ export default function AdminUsersIndex({ users, filters, stats }) {
                                                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                                 </div>
                                                 <p className="text-slate-900 font-black uppercase tracking-widest text-sm">Tidak ada data ditemukan</p>
-                                                <button onClick={() => setSearch('')} className="text-primary-600 mt-2 font-bold hover:underline">Reset pencarian</button>
+                                                <button onClick={() => {
+                                                    const reset = { search: '', role: '', office_id: '', supervisor_id: '' };
+                                                    setFilterData(reset);
+                                                    router.get(route('admin.users.index'), reset);
+                                                }} className="text-primary-600 mt-2 font-bold hover:underline">Reset filter</button>
                                             </div>
                                         </td>
                                     </tr>

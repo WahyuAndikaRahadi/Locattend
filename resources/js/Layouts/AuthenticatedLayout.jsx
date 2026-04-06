@@ -16,13 +16,11 @@ const navigation = {
     karyawan: [
         { name: 'Dashboard', href: 'dashboard', icon: Icons.Dashboard },
         { name: 'Absensi', href: 'attendance.index', icon: Icons.Absensi },
-        { name: 'Riwayat', href: 'attendance.history', icon: Icons.Riwayat },
         { name: 'Izin/Cuti', href: 'leaves.index', icon: Icons.Izin },
     ],
     supervisor: [
         { name: 'Dashboard', href: 'dashboard', icon: Icons.Dashboard },
         { name: 'Absensi', href: 'attendance.index', icon: Icons.Absensi },
-        { name: 'Riwayat', href: 'attendance.history', icon: Icons.Riwayat },
         { name: 'Tim Saya', href: 'supervisor.team', icon: Icons.Tim },
         { name: 'Jadwal Tim', href: 'supervisor.schedule', icon: Icons.Jadwal },
         { name: 'Persetujuan Izin', href: 'supervisor.leaves.index', icon: Icons.Izin, badge: true },
@@ -65,19 +63,23 @@ export default function AuthenticatedLayout({ header, children }) {
             {/* Flash Messages */}
             {showFlash && flash?.success && (
                 <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
-                    <div className="bg-accent-500 text-white px-6 py-3 rounded-xl shadow-lg shadow-accent-500/25 flex items-center gap-3">
-                        <span>✅</span>
-                        <span className="font-medium">{flash.success}</span>
-                        <button onClick={() => setShowFlash(false)} className="ml-2 hover:opacity-70">✕</button>
+                    <div className="bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-lg shadow-emerald-500/25 flex items-center gap-3">
+                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+                        <span className="font-medium text-sm">{flash.success}</span>
+                        <button onClick={() => setShowFlash(false)} className="ml-2 hover:opacity-70 transition-opacity">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
                     </div>
                 </div>
             )}
             {showFlash && flash?.error && (
                 <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
-                    <div className="bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg shadow-red-500/25 flex items-center gap-3">
-                        <span>❌</span>
-                        <span className="font-medium">{flash.error}</span>
-                        <button onClick={() => setShowFlash(false)} className="ml-2 hover:opacity-70">✕</button>
+                    <div className="bg-rose-500 text-white px-6 py-3 rounded-2xl shadow-lg shadow-rose-500/25 flex items-center gap-3">
+                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <span className="font-medium text-sm">{flash.error}</span>
+                        <button onClick={() => setShowFlash(false)} className="ml-2 hover:opacity-70 transition-opacity">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
                     </div>
                 </div>
             )}
@@ -169,8 +171,8 @@ export default function AuthenticatedLayout({ header, children }) {
                             {header && <div className="text-xl font-bold text-dark-900">{header}</div>}
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="hidden sm:flex items-center gap-2 text-sm text-dark-500">
-                                <span>📅</span>
+                            <div className="hidden sm:flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 text-sm font-semibold text-slate-600">
+                                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                 <span>{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                             </div>
                         </div>
