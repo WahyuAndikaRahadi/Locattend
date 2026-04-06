@@ -60,8 +60,8 @@
     }
 
     .sidebar-link-active {
-        @apply flex items-center gap-3 px-4 py-3 rounded-xl font-semibold
-               bg-gradient-to-r from-primary-50 to-primary-100 text-primary-700 shadow-sm;
+        @apply flex items-center gap-3 px-4 py-3 rounded-xl font-bold tracking-wide
+               bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25;
     }
 }
 

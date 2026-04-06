@@ -72,32 +72,23 @@ class AttendanceController extends Controller
             ]);
         }
 
-        // Determine attendance status based on time
+        // Determine attendance status based on office start time
         $now = Carbon::now('Asia/Jakarta');
         $clockInTime = $now->format('H:i:s');
 
-        if ($now->lt(Carbon::createFromTime(7, 50, 0, 'Asia/Jakarta'))) {
-            $status = 'hadir';
-        } elseif ($now->lte(Carbon::createFromTime(8, 0, 0, 'Asia/Jakarta'))) {
-            $status = 'hampir_terlambat';
-        } else {
-            $status = 'terlambat';
-        }
-
-        // Create attendance record
+        // Note: 'terlambat' status is removed as per user request. 
+        // All successful clock-ins are marked 'hadir'.
         Attendance::create([
             'user_id' => $user->id,
             'date' => today(),
             'clock_in_time' => $clockInTime,
-            'status' => $status,
+            'status' => 'hadir',
             'lat_in' => $lat,
             'long_in' => $lng,
         ]);
 
         $statusLabels = [
             'hadir' => 'Hadir',
-            'hampir_terlambat' => 'Hampir Terlambat',
-            'terlambat' => 'Terlambat',
         ];
 
         return back()->with('success', "Absensi berhasil! Status: {$statusLabels[$status]} ({$clockInTime})");

@@ -53,7 +53,7 @@ class UserController extends Controller
         return Inertia::render('Admin/Users/Create', [
             'roles' => Role::all()->pluck('name'),
             'offices' => Office::all(['id', 'name']),
-            'supervisors' => User::role('supervisor')->get(['id', 'name']),
+            'supervisors' => User::role('supervisor')->get(['id', 'name', 'office_id']),
         ]);
     }
 
@@ -98,7 +98,7 @@ class UserController extends Controller
             'currentRole' => $user->roles->first()?->name,
             'roles' => Role::all()->pluck('name'),
             'offices' => Office::all(['id', 'name']),
-            'supervisors' => User::role('supervisor')->where('id', '!=', $user->id)->get(['id', 'name']),
+            'supervisors' => User::role('supervisor')->where('id', '!=', $user->id)->get(['id', 'name', 'office_id']),
         ]);
     }
 
@@ -154,7 +154,7 @@ class UserController extends Controller
     public function team(Request $request)
     {
         // Ambil semua user dengan role 'supervisor'
-        $supervisors = User::role('supervisor')->get(['id', 'name', 'email']);
+        $supervisors = User::role('supervisor')->with('office')->get(['id', 'name', 'email', 'office_id']);
         $supervisorIds = $supervisors->pluck('id');
 
         // Status hari ini untuk masing-masing supervisor
@@ -162,24 +162,62 @@ class UserController extends Controller
             $todayAttendance = Attendance::where('user_id', $member->id)
                 ->whereDate('date', today())
                 ->first();
-            $member->today_status = $todayAttendance ? $todayAttendance->status : 'belum_absen';
+            
+            if ($todayAttendance) {
+                $member->today_status = 'hadir';
+            } else {
+                // Check for approved leave
+                $approvedLeave = Leave::where('user_id', $member->id)
+                    ->where('status', 'approved')
+                    ->whereDate('start_date', '<=', today())
+                    ->whereDate('end_date', '>=', today())
+                    ->first();
+                
+                if ($approvedLeave) {
+                    $member->today_status = 'izin';
+                } elseif ($member->office && !$member->office->isWorkingDay(today())) {
+                    $member->today_status = 'libur';
+                } else {
+                    $member->today_status = 'alpha';
+                }
+            }
             return $member;
         });
 
         // Data absensi 7 hari terakhir (Bar Chart) - Gabungan semua supervisor
         $last7Days = collect();
+        $totalSupervisors = $supervisorIds->count();
+
+        $totalSupervisors = $supervisorIds->count();
+
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $dayAttendances = Attendance::whereIn('user_id', $supervisorIds)
                 ->whereDate('date', $date)
-                ->get();
+                ->where('status', 'hadir')
+                ->count();
+            
+            $dayLeavesCount = Leave::whereIn('user_id', $supervisorIds)
+                ->where('status', 'approved')
+                ->whereDate('start_date', '<=', $date)
+                ->whereDate('end_date', '>=', $date)
+                ->count();
+
+            // Calculate alpha only for those supposed to work today
+            $expectedToWorkCount = User::whereIn('id', $supervisorIds)
+                ->get()
+                ->filter(function($u) use ($date) {
+                    return !$u->office || $u->office->isWorkingDay($date);
+                })->count();
+
+            $alpha = max(0, $expectedToWorkCount - $dayAttendances - $dayLeavesCount);
 
             $last7Days->push([
                 'date' => $date->format('d/m'),
                 'day' => $date->translatedFormat('D'),
-                'hadir' => $dayAttendances->where('status', 'hadir')->count(),
-                'hampir_terlambat' => $dayAttendances->where('status', 'hampir_terlambat')->count(),
-                'terlambat' => $dayAttendances->where('status', 'terlambat')->count(),
+                'hadir' => $dayAttendances,
+                'izin' => $dayLeavesCount,
+                'alpha' => $alpha,
             ]);
         }
 
@@ -188,11 +226,45 @@ class UserController extends Controller
             ->whereMonth('date', now()->month)
             ->whereYear('date', now()->year)
             ->get();
+        
+        $monthLeavesCount = Leave::whereIn('user_id', $supervisorIds)
+            ->where('status', 'approved')
+            ->whereMonth('start_date', '<=', now()->month)
+            ->count();
+
+        // For status distribution, we need to calculate alpha across the month correctly
+        $totalAlpha = 0;
+        $totalHadir = Attendance::whereIn('user_id', $supervisorIds)->whereMonth('date', now()->month)->whereYear('date', now()->year)->count();
+        
+        // Accurate month-to-date alpha calculation
+        $supervisorsData = User::whereIn('id', $supervisorIds)->with('office')->get();
+        for ($d = 1; $d <= now()->day; $d++) {
+            $currentDate = now()->copy()->day($d);
+            
+            foreach ($supervisorsData as $member) {
+                // Skip if not a working day
+                if ($member->office && !$member->office->isWorkingDay($currentDate)) continue;
+
+                // Check attendance
+                $hasAttended = Attendance::where('user_id', $member->id)->whereDate('date', $currentDate)->exists();
+                if ($hasAttended) continue;
+
+                // Check leave
+                $isOnLeave = Leave::where('user_id', $member->id)
+                    ->where('status', 'approved')
+                    ->whereDate('start_date', '<=', $currentDate)
+                    ->whereDate('end_date', '>=', $currentDate)
+                    ->exists();
+                if ($isOnLeave) continue;
+
+                $totalAlpha++;
+            }
+        }
 
         $statusDistribution = [
-            ['name' => 'Hadir', 'value' => $monthAttendances->where('status', 'hadir')->count(), 'color' => '#3b82f6'],
-            ['name' => 'Hampir Terlambat', 'value' => $monthAttendances->where('status', 'hampir_terlambat')->count(), 'color' => '#f59e0b'],
-            ['name' => 'Terlambat', 'value' => $monthAttendances->where('status', 'terlambat')->count(), 'color' => '#ef4444'],
+            ['name' => 'Hadir', 'value' => $totalHadir, 'color' => '#3b82f6'],
+            ['name' => 'Izin', 'value' => $monthLeavesCount, 'color' => '#f59e0b'],
+            ['name' => 'Alpha', 'value' => $totalAlpha, 'color' => '#64748b'],
         ];
 
         // Pengajuan izin pending dari para Supervisor
@@ -207,6 +279,178 @@ class UserController extends Controller
             'attendanceChart' => $last7Days,
             'statusDistribution' => $statusDistribution,
             'pendingLeaves' => $pendingLeaves,
+        ]);
+    }
+
+    /**
+     * Display all leave requests from Supervisors.
+     */
+    public function leaves(Request $request)
+    {
+        $supervisors = User::role('supervisor')->pluck('id');
+        
+        $pendingLeaves = Leave::whereIn('user_id', $supervisors)
+            ->where('status', 'pending')
+            ->with('user:id,name,email')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $processedLeaves = Leave::whereIn('user_id', $supervisors)
+            ->where('status', '!=', 'pending')
+            ->with('user:id,name,email')
+            ->orderByDesc('updated_at')
+            ->take(10)
+            ->get();
+
+        return Inertia::render('Admin/Leaves/Index', [
+            'pendingLeaves' => $pendingLeaves,
+            'processedLeaves' => $processedLeaves,
+        ]);
+    }
+
+    /**
+     * Tampilkan jadwal absensi (Harian/Bulanan) untuk SEMUA karyawan & supervisor.
+     */
+    public function schedule(Request $request)
+    {
+        // Get all non-admin users
+        $users = User::role(['karyawan', 'supervisor'])
+            ->select('id', 'name', 'email', 'office_id')
+            ->with('office:id,working_hour_start,working_days')
+            ->get();
+        
+        $userIds = $users->pluck('id');
+
+        // ========== DAILY VIEW ==========
+        $selectedDate = $request->input('date', today()->format('Y-m-d'));
+        $date = Carbon::parse($selectedDate);
+
+        $dailyAttendances = Attendance::whereIn('user_id', $userIds)
+            ->whereDate('date', $date)
+            ->get()
+            ->keyBy('user_id');
+
+        $dailyLeaves = Leave::whereIn('user_id', $userIds)
+            ->where('status', 'approved')
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->get()
+            ->keyBy('user_id');
+
+        $dailyData = $users->map(function ($member) use ($dailyAttendances, $dailyLeaves) {
+            $attendance = $dailyAttendances->get($member->id);
+            $leave = $dailyLeaves->get($member->id);
+
+            $isLate = false;
+            if ($attendance && $member->office && $member->office->working_hour_start) {
+                $clockIn = Carbon::parse($attendance->clock_in_time);
+                $startTime = Carbon::parse($member->office->working_hour_start);
+                $isLate = $clockIn->greaterThan($startTime);
+            }
+
+            if ($attendance) {
+                $status = 'hadir';
+            } elseif ($leave) {
+                $status = 'izin';
+            } elseif ($member->office && !$member->office->isWorkingDay($date)) {
+                $status = 'libur';
+            } else {
+                $status = 'alpha';
+            }
+
+            return [
+                'id' => $member->id,
+                'name' => $member->name,
+                'email' => $member->email,
+                'status' => $status,
+                'clock_in_time' => $attendance?->clock_in_time,
+                'is_late' => $isLate,
+                'leave_reason' => $leave?->reason,
+            ];
+        });
+
+        // ========== MONTHLY VIEW ==========
+        $selectedMonth = $request->input('month', now()->format('Y-m'));
+        $monthDate = Carbon::parse($selectedMonth . '-01');
+        $daysInMonth = $monthDate->copy()->endOfMonth()->day;
+        
+        // Count max days up to current day if we're in the current month
+        $maxDay = $monthDate->isSameMonth(now()) ? now()->day : $daysInMonth;
+
+        $monthlyData = $users->map(function ($member) use ($monthDate, $maxDay) {
+            $attendances = Attendance::where('user_id', $member->id)
+                ->whereYear('date', $monthDate->year)
+                ->whereMonth('date', $monthDate->month)
+                ->get();
+
+            $hadirCount = $attendances->count();
+
+            // Check how many times they were late
+            $lateCount = 0;
+            if ($member->office && $member->office->working_hour_start) {
+                $startTime = Carbon::parse($member->office->working_hour_start);
+                $lateCount = $attendances->filter(function ($a) use ($startTime) {
+                    return $a->clock_in_time && Carbon::parse($a->clock_in_time)->greaterThan($startTime);
+                })->count();
+            }
+
+            // Count approved leaves crossing this month
+            $leaves = Leave::where('user_id', $member->id)
+                ->where('status', 'approved')
+                ->whereDate('start_date', '<=', $monthDate->copy()->endOfMonth())
+                ->whereDate('end_date', '>=', $monthDate->copy()->startOfMonth())
+                ->get();
+
+            $alphaCount = 0;
+            $liburCount = 0;
+            $izinCount = 0;
+            for ($d = 1; $d <= $maxDay; $d++) {
+                $currentDate = $monthDate->copy()->day($d);
+                
+                // Check if attended
+                $hasAttended = $attendances->contains(function($a) use ($currentDate) {
+                    return Carbon::parse($a->date)->isSameDay($currentDate);
+                });
+                
+                if ($hasAttended) continue;
+
+                // Check if on leave
+                $isOnLeave = $leaves->contains(function($l) use ($currentDate) {
+                    return $currentDate->between(Carbon::parse($l->start_date)->startOfDay(), Carbon::parse($l->end_date)->endOfDay());
+                });
+
+                if ($isOnLeave) {
+                    $izinCount++;
+                    continue;
+                }
+
+                // Check if working day
+                if ($member->office && !$member->office->isWorkingDay($currentDate)) {
+                    $liburCount++;
+                    continue;
+                }
+
+                $alphaCount++;
+            }
+
+            return [
+                'id' => $member->id,
+                'name' => $member->name,
+                'email' => $member->email,
+                'hadir' => $hadirCount,
+                'izin' => $izinCount,
+                'alpha' => $alphaCount,
+                'libur' => $liburCount,
+                'terlambat' => $lateCount,
+            ];
+        });
+
+        return Inertia::render('Admin/Schedule', [
+            'dailyData' => $dailyData,
+            'monthlyData' => $monthlyData,
+            'selectedDate' => $selectedDate,
+            'selectedMonth' => $selectedMonth,
+            'totalMembers' => $userIds->count(),
         ]);
     }
 }

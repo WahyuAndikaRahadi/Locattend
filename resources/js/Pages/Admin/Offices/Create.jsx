@@ -18,6 +18,16 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
+const DAYS_OF_WEEK = [
+    { id: 1, name: 'Senin' },
+    { id: 2, name: 'Selasa' },
+    { id: 3, name: 'Rabu' },
+    { id: 4, name: 'Kamis' },
+    { id: 5, name: 'Jumat' },
+    { id: 6, name: 'Sabtu' },
+    { id: 0, name: 'Minggu' },
+];
+
 function LocationMarker({ position, setPosition }) {
     const map = useMap();
     
@@ -124,6 +134,8 @@ export default function AdminOfficesCreate() {
         latitude: '',
         longitude: '',
         radius_meters: 200,
+        working_hour_start: '08:30',
+        working_days: [1, 2, 3, 4, 5, 6],
     });
 
     const [mapCenter, setMapCenter] = useState([-6.1751, 106.8650]); // Default Jakarta
@@ -226,7 +238,61 @@ export default function AdminOfficesCreate() {
                                                 placeholder="106.865000" 
                                             />
                                         </div>
-                                        {errors.longitude && <p className="text-rose-500 text-xs font-bold mt-2 ml-1">⚠️ {errors.longitude}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Jam Masuk Kantor</label>
+                                        <div className="relative group">
+                                            <div className="absolute inset-y-0 left-0 pl-5 flex items-center text-blue-500">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            </div>
+                                            <input 
+                                                type="time" 
+                                                value={data.working_hour_start} 
+                                                onChange={(e) => setData('working_hour_start', e.target.value)} 
+                                                className="w-full pl-16 pr-6 py-5 bg-slate-50 border-none rounded-[2rem] focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all font-black text-slate-900 placeholder-slate-300 shadow-inner text-xl tabular-nums" 
+                                            />
+                                        </div>
+                                        {errors.working_hour_start && <p className="text-rose-500 text-xs font-bold mt-2 ml-1">⚠️ {errors.working_hour_start}</p>}
+                                        <p className="text-[10px] text-slate-400 font-bold mt-3 ml-1">Karyawan yang melakukan absen setelah jam ini akan dianggap <span className="text-rose-500 underline decoration-rose-200">Terlambat</span>.</p>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <div className="flex items-center justify-between mb-3 ml-1">
+                                            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Hari Kerja</label>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setData('working_days', [1, 2, 3, 4, 5, 6])}
+                                                className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline"
+                                            >
+                                                Pilih Sen - Sab
+                                            </button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {DAYS_OF_WEEK.map((day) => (
+                                                <button
+                                                    key={day.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const current = [...data.working_days];
+                                                        const index = current.indexOf(day.id);
+                                                        if (index === -1) {
+                                                            current.push(day.id);
+                                                        } else {
+                                                            current.splice(index, 1);
+                                                        }
+                                                        setData('working_days', current);
+                                                    }}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                                        data.working_days.includes(day.id)
+                                                            ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
+                                                            : 'bg-white border-slate-200 text-slate-400 hover:border-blue-200 hover:text-blue-500'
+                                                    }`}
+                                                >
+                                                    {day.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {errors.working_days && <p className="text-rose-500 text-xs font-bold mt-2 ml-1">⚠️ {errors.working_days}</p>}
+                                        <p className="text-[10px] text-slate-400 font-bold mt-3 ml-1">Pilih hari-hari dimana karyawan <span className="text-blue-500">wajib</span> melakukan absensi.</p>
                                     </div>
                                 </div>
 

@@ -52,9 +52,11 @@ class OfficeController extends Controller
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'radius_meters' => 'required|integer|min:10|max:10000',
+            'working_hour_start' => 'required|string',
+            'working_days' => 'required|array|min:1',
         ]);
 
-        Office::create($request->only(['name', 'latitude', 'longitude', 'radius_meters']));
+        Office::create($request->only(['name', 'latitude', 'longitude', 'radius_meters', 'working_hour_start', 'working_days']));
 
         return redirect()->route('admin.offices.index')
             ->with('success', 'Kantor berhasil ditambahkan.');
@@ -80,9 +82,11 @@ class OfficeController extends Controller
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'radius_meters' => 'required|integer|min:10|max:10000',
+            'working_hour_start' => 'required|string',
+            'working_days' => 'required|array|min:1',
         ]);
 
-        $office->update($request->only(['name', 'latitude', 'longitude', 'radius_meters']));
+        $office->update($request->only(['name', 'latitude', 'longitude', 'radius_meters', 'working_hour_start', 'working_days']));
 
         return redirect()->route('admin.offices.index')
             ->with('success', 'Data kantor berhasil diperbarui.');

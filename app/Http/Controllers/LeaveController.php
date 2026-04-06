@@ -38,12 +38,14 @@ class LeaveController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'leave_type' => 'required|in:izin,cuti',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string|max:500',
         ]);
 
         $request->user()->leaves()->create([
+            'leave_type' => $request->leave_type,
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
             'reason' => $request->reason,

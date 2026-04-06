@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Carbon\Carbon;
 
 class Office extends Model
 {
@@ -15,6 +16,8 @@ class Office extends Model
         'latitude',
         'longitude',
         'radius_meters',
+        'working_hour_start',
+        'working_days',
     ];
 
     protected function casts(): array
@@ -23,6 +26,7 @@ class Office extends Model
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
             'radius_meters' => 'integer',
+            'working_days' => 'array',
         ];
     }
 
@@ -73,5 +77,19 @@ class Office extends Model
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return $earthRadius * $c;
+    }
+
+    /**
+     * Check if the given date is a working day for this office.
+     *
+     * @param mixed $date Carbon instance or date string
+     * @return bool
+     */
+    public function isWorkingDay($date): bool
+    {
+        // Default to Mon-Sat (1,2,3,4,5,6) if null
+        $workingDays = $this->working_days ?? [1, 2, 3, 4, 5, 6];
+        $dayOfWeek = Carbon::parse($date)->dayOfWeek;
+        return in_array($dayOfWeek, $workingDays);
     }
 }

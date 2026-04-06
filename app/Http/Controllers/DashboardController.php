@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Attendance;
+use App\Models\Leave;
+use App\Models\User;
+use App\Models\Office;
 
 class DashboardController extends Controller
 {
@@ -24,6 +28,22 @@ class DashboardController extends Controller
             ->whereDate('date', today())
             ->first();
 
+        // If no attendance, check for approved leaves today
+        if (!$todayAttendance) {
+            $approvedTodayLeave = $user->leaves()
+                ->where('status', 'approved')
+                ->whereDate('start_date', '<=', today())
+                ->whereDate('end_date', '>=', today())
+                ->first();
+            
+            if ($approvedTodayLeave) {
+                $todayAttendance = (object)[
+                    'status' => 'izin', // Merge 'cuti' -> 'izin' for UI
+                    'clock_in_time' => null
+                ];
+            }
+        }
+
         // Get pending leaves count
         $pendingLeavesCount = $user->leaves()
             ->where('status', 'pending')
@@ -42,20 +62,34 @@ class DashboardController extends Controller
             $teamIds = $user->subordinates()->pluck('id');
 
             $data['teamCount'] = $teamIds->count();
-            $data['teamPresentToday'] = \App\Models\Attendance::whereIn('user_id', $teamIds)
+            $data['teamPresentToday'] = Attendance::whereIn('user_id', $teamIds)
                 ->whereDate('date', today())
+                ->where('status', 'hadir')
                 ->count();
-            $data['teamPendingLeaves'] = \App\Models\Leave::whereIn('user_id', $teamIds)
+            
+            $data['teamOnLeaveToday'] = Leave::whereIn('user_id', $teamIds)
+                ->where('status', 'approved')
+                ->whereDate('start_date', '<=', today())
+                ->whereDate('end_date', '>=', today())
+                ->count();
+
+            $data['teamPendingLeaves'] = Leave::whereIn('user_id', $teamIds)
                 ->where('status', 'pending')
                 ->count();
         }
 
         // Admin-specific: global stats
         if ($user->hasRole('admin')) {
-            $data['totalUsers'] = \App\Models\User::count();
-            $data['totalOffices'] = \App\Models\Office::count();
-            $data['todayTotalAttendance'] = \App\Models\Attendance::whereDate('date', today())->count();
-            $data['totalPendingLeaves'] = \App\Models\Leave::where('status', 'pending')->count();
+            $data['totalUsers'] = User::count();
+            $data['totalOffices'] = Office::count();
+            $data['todayTotalAttendance'] = Attendance::whereDate('date', today())
+                ->where('status', 'hadir')
+                ->count();
+            $data['totalOnLeaveToday'] = Leave::where('status', 'approved')
+                ->whereDate('start_date', '<=', today())
+                ->whereDate('end_date', '>=', today())
+                ->count();
+            $data['totalPendingLeaves'] = Leave::where('status', 'pending')->count();
 
             // Additional Admin Analytics
             // Recent Activities (Latest 5 attendances)
@@ -67,7 +101,7 @@ class DashboardController extends Controller
                     'id' => $att->id,
                     'user_name' => $att->user->name,
                     'time' => $att->clock_in_time,
-                    'status' => $att->status,
+                    'status' => 'hadir',
                     'location' => $att->latitude . ',' . $att->longitude
                 ]);
 
@@ -83,10 +117,6 @@ class DashboardController extends Controller
             }
             $data['attendanceTrends'] = $trends;
 
-            // Late Comers Count
-            $data['lateComersCount'] = \App\Models\Attendance::whereDate('date', today())
-                ->where('status', 'terlambat')
-                ->count();
         }
 
         return Inertia::render('Dashboard', $data);

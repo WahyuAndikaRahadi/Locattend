@@ -3,6 +3,7 @@ import { Head, useForm, Link } from '@inertiajs/react';
 
 export default function LeaveCreate() {
     const { data, setData, post, processing, errors } = useForm({
+        leave_type: 'izin',
         start_date: '',
         end_date: '',
         reason: '',
@@ -27,6 +28,30 @@ export default function LeaveCreate() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="flex gap-4 p-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <input 
+                                    type="radio" 
+                                    name="leave_type" 
+                                    value="izin" 
+                                    checked={data.leave_type === 'izin'} 
+                                    onChange={(e) => setData('leave_type', e.target.value)}
+                                    className="w-5 h-5 text-amber-600 focus:ring-amber-500 border-slate-300"
+                                />
+                                <span className={`text-sm font-black uppercase tracking-widest ${data.leave_type === 'izin' ? 'text-amber-700' : 'text-slate-400 group-hover:text-slate-600'}`}>Izin</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <input 
+                                    type="radio" 
+                                    name="leave_type" 
+                                    value="cuti" 
+                                    checked={data.leave_type === 'cuti'} 
+                                    onChange={(e) => setData('leave_type', e.target.value)}
+                                    className="w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                                />
+                                <span className={`text-sm font-black uppercase tracking-widest ${data.leave_type === 'cuti' ? 'text-indigo-700' : 'text-slate-400 group-hover:text-slate-600'}`}>Cuti</span>
+                            </label>
+                        </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-semibold text-dark-700 mb-2">Tanggal Mulai</label>

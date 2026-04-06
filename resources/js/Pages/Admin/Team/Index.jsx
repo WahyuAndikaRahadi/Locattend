@@ -5,9 +5,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 export default function AdminTeam({ teamMembers, attendanceChart, statusDistribution, pendingLeaves }) {
     const statusStyles = {
         hadir: { text: 'Hadir', color: 'bg-emerald-100 text-emerald-700' },
-        hampir_terlambat: { text: 'Hampir Terlambat', color: 'bg-amber-100 text-amber-700' },
-        terlambat: { text: 'Terlambat', color: 'bg-rose-100 text-rose-700' },
-        belum_absen: { text: 'Belum Absen', color: 'bg-slate-100 text-slate-500' },
+        izin: { text: 'Izin', color: 'bg-amber-100 text-amber-700' },
+        alpha: { text: 'Alpha', color: 'bg-slate-100 text-slate-500' },
     };
 
     const handleApprove = (leaveId) => {
@@ -57,9 +56,9 @@ export default function AdminTeam({ teamMembers, attendanceChart, statusDistribu
                                         }}
                                     />
                                     <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', paddingTop: '20px' }} />
-                                    <Bar dataKey="hadir" name="Hadir" fill="#10b981" radius={[6, 6, 0, 0]} barSize={20} />
-                                    <Bar dataKey="hampir_terlambat" name="Hampir Terlambat" fill="#f59e0b" radius={[6, 6, 0, 0]} barSize={20} />
-                                    <Bar dataKey="terlambat" name="Terlambat" fill="#ef4444" radius={[6, 6, 0, 0]} barSize={20} />
+                                    <Bar dataKey="hadir" name="Hadir" fill="#10b981" radius={[6, 6, 0, 0]} barSize={15} />
+                                    <Bar dataKey="izin" name="Izin" fill="#f59e0b" radius={[6, 6, 0, 0]} barSize={15} />
+                                    <Bar dataKey="alpha" name="Alpha" fill="#94a3b8" radius={[6, 6, 0, 0]} barSize={15} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -113,9 +112,9 @@ export default function AdminTeam({ teamMembers, attendanceChart, statusDistribu
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 gap-8">
                     {/* Team Members List */}
-                    <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/30">
+                    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/30">
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
                                 <span className="w-10 h-10 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-bold">👥</span>
@@ -124,80 +123,33 @@ export default function AdminTeam({ teamMembers, attendanceChart, statusDistribu
                             <span className="px-5 py-2 bg-slate-100 text-slate-500 rounded-2xl text-xs font-black uppercase tracking-widest">{teamMembers?.length || 0} Anggota</span>
                         </div>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="flex flex-col gap-3">
                             {teamMembers?.map((member) => (
-                                <div key={member.id} className="p-6 bg-slate-50/50 rounded-3xl border border-slate-100 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 group">
+                                <div key={member.id} className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:bg-white hover:shadow-lg hover:shadow-slate-200/50 transition-all duration-300 group flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-blue-600 font-black text-xl shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+                                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-blue-600 font-black text-lg shadow-sm border border-slate-100 group-hover:scale-105 transition-transform">
                                             {member.name?.charAt(0)?.toUpperCase()}
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-base font-black text-slate-900 truncate tracking-tight">{member.name}</p>
-                                            <p className="text-xs text-slate-400 font-bold truncate tracking-wide">{member.email}</p>
+                                        <div>
+                                            <p className="text-base font-black text-slate-900 tracking-tight">{member.name}</p>
+                                            <p className="text-xs text-slate-400 font-bold tracking-wide">{member.email}</p>
                                         </div>
                                     </div>
-                                    <div className="mt-5 flex items-center justify-between pt-4 border-t border-slate-100">
-                                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Status Hari Ini</span>
-                                        <span className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-xl ${statusStyles[member.today_status]?.color}`}>
+                                    <div className="flex items-center gap-3">
+                                        <span className="hidden sm:inline-block text-[10px] font-black text-slate-300 uppercase tracking-widest">Status Hari Ini</span>
+                                        <span className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl ${statusStyles[member.today_status]?.color}`}>
                                             {statusStyles[member.today_status]?.text}
                                         </span>
                                     </div>
                                 </div>
                             ))}
                             {(!teamMembers || teamMembers.length === 0) && (
-                                <div className="col-span-full py-20 text-center opacity-30">
-                                    <p className="text-2xl mb-2">🔭</p>
+                                <div className="py-16 text-center opacity-30 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                                    <p className="text-3xl mb-3">🔭</p>
                                     <p className="text-sm font-black uppercase tracking-widest">Belum ada supervisor terdaftar</p>
                                 </div>
                             )}
                         </div>
-                    </div>
-
-                    {/* Pending Leave Requests */}
-                    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/30">
-                        <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                            <span className="w-10 h-10 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center font-bold">📝</span>
-                            Izin Supervisor
-                        </h3>
-                        
-                        {pendingLeaves?.length > 0 ? (
-                            <div className="space-y-6">
-                                {pendingLeaves.map((leave) => (
-                                    <div key={leave.id} className="p-6 bg-amber-50/30 rounded-3xl border border-amber-100/50">
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black text-amber-600 border border-amber-100 shadow-sm">
-                                                {leave.user?.name?.charAt(0)?.toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-black text-slate-900 leading-tight">{leave.user?.name}</p>
-                                                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mt-0.5">Minta Izin</p>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="bg-white/60 p-4 rounded-2xl mb-5">
-                                            <p className="text-xs text-slate-600 font-bold italic mb-3">"{leave.reason}"</p>
-                                            <p className="text-[10px] text-slate-400 font-black tracking-widest uppercase">
-                                                📅 {new Date(leave.start_date).toLocaleDateString('id-ID')} — {new Date(leave.end_date).toLocaleDateString('id-ID')}
-                                            </p>
-                                        </div>
-
-                                        <div className="flex gap-3">
-                                            <button onClick={() => handleApprove(leave.id)} className="flex-1 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 shadow-lg shadow-emerald-500/20 transition-all active:scale-95">
-                                                Setujui
-                                            </button>
-                                            <button onClick={() => handleReject(leave.id)} className="flex-1 py-3 bg-white border border-rose-100 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all active:scale-95">
-                                                Tolak
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="py-20 text-center opacity-30">
-                                <p className="text-2xl mb-2">☕</p>
-                                <p className="text-xs font-black uppercase tracking-widest">Semua pengajuan telah diproses</p>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>

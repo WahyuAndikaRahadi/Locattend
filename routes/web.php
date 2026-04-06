@@ -41,6 +41,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Supervisor routes
     Route::middleware('role:supervisor|admin')->prefix('supervisor')->name('supervisor.')->group(function () {
         Route::get('/team', [SupervisorController::class, 'team'])->name('team');
+        Route::get('/schedule', [SupervisorController::class, 'schedule'])->name('schedule');
+        Route::get('/leaves', [SupervisorController::class, 'leaves'])->name('leaves.index');
         Route::post('/leaves/{leave}/approve', [SupervisorController::class, 'approveLeave'])->name('leaves.approve');
         Route::post('/leaves/{leave}/reject', [SupervisorController::class, 'rejectLeave'])->name('leaves.reject');
     });
@@ -48,6 +50,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Admin routes
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/team', [UserController::class, 'team'])->name('team');
+        Route::get('/schedule', [UserController::class, 'schedule'])->name('schedule');
+        Route::get('/leaves', [UserController::class, 'leaves'])->name('leaves.index');
         Route::resource('users', UserController::class);
         Route::resource('offices', OfficeController::class);
     });

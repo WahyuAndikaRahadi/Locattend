@@ -112,7 +112,14 @@ export default function AdminUsersCreate({ roles, offices, supervisors }) {
                                     <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Kantor Penempatan</label>
                                     <select 
                                         value={data.office_id} 
-                                        onChange={(e) => setData('office_id', e.target.value)} 
+                                        onChange={(e) => {
+                                            const newOfficeId = e.target.value;
+                                            setData((prev) => ({
+                                                ...prev,
+                                                office_id: newOfficeId,
+                                                supervisor_id: '' // reset supervisor when office changes
+                                            }));
+                                        }} 
                                         className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:bg-white focus:ring-4 focus:ring-primary-100 transition-all font-bold text-slate-800 shadow-inner appearance-none"
                                     >
                                         <option value="">-- Tidak Memilih Kantor --</option>
@@ -132,7 +139,7 @@ export default function AdminUsersCreate({ roles, offices, supervisors }) {
                                             className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:bg-white focus:ring-4 focus:ring-primary-100 transition-all font-bold text-slate-800 shadow-inner appearance-none"
                                         >
                                             <option value="">-- Pilih Supervisor (Opsional) --</option>
-                                            {supervisors?.map((sup) => (
+                                            {(data.office_id ? supervisors?.filter(sup => sup.office_id == data.office_id) : supervisors)?.map((sup) => (
                                                 <option key={sup.id} value={sup.id}>{sup.name}</option>
                                             ))}
                                         </select>

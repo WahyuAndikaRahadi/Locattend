@@ -121,15 +121,47 @@ export default function AdminOfficesIndex({ offices, stats, filters }) {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-5 p-5 bg-indigo-50/50 rounded-[2rem] border border-indigo-100/30 shadow-sm group-hover:bg-indigo-50 group-hover:border-indigo-200 transition-all">
-                                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo-500 shadow-sm shrink-0">
-                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <div className="flex items-center gap-5 p-5 bg-amber-50/50 rounded-[2rem] border border-amber-100/30 shadow-sm group-hover:bg-amber-50 group-hover:border-amber-200 transition-all">
+                                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-amber-500 shadow-sm shrink-0">
+                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                             </div>
                                             <div>
-                                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none mb-1.5">Geofence Radius</p>
-                                                <p className="text-lg font-black text-indigo-600 tabular-nums">{office.radius_meters} <span className="text-[10px] uppercase font-bold text-indigo-400 ml-1">Meter</span></p>
+                                                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none mb-1.5">Jam Masuk Kantor</p>
+                                                <p className="text-xl font-black text-amber-600 tabular-nums">{office.working_hour_start} <span className="text-[10px] uppercase font-bold text-amber-400 ml-1">WIB</span></p>
                                             </div>
                                         </div>
+
+                                        <div className="flex flex-col gap-5 p-5 bg-indigo-50/50 rounded-[2rem] border border-indigo-100/30 shadow-sm group-hover:bg-indigo-50 group-hover:border-indigo-200 transition-all">
+                                             <div className="flex items-center gap-5">
+                                                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo-500 shadow-sm shrink-0">
+                                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                 </div>
+                                                 <div>
+                                                     <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none mb-1.5">Geofence Radius</p>
+                                                     <p className="text-lg font-black text-indigo-600 tabular-nums">{office.radius_meters} <span className="text-[10px] uppercase font-bold text-indigo-400 ml-1">Meter</span></p>
+                                                 </div>
+                                             </div>
+                                             
+                                             <div className="pt-4 border-t border-indigo-100/30">
+                                                 <div className="flex flex-wrap gap-1.5">
+                                                     {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((day, idx) => {
+                                                         const isActive = office.working_days?.includes(idx);
+                                                         return (
+                                                             <span 
+                                                                 key={day} 
+                                                                 className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter ${
+                                                                     isActive 
+                                                                     ? 'bg-indigo-600 text-white' 
+                                                                     : 'bg-white text-slate-300 border border-slate-100'
+                                                                 }`}
+                                                             >
+                                                                 {day}
+                                                             </span>
+                                                         );
+                                                     })}
+                                                 </div>
+                                             </div>
+                                         </div>
                                     </div>
 
                                     <div className="flex flex-col gap-4 mt-8 pt-8 border-t border-slate-50 relative z-10">

@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Models\Leave;
+use App\Models\User;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -38,6 +40,24 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+            ],
+            'notifications' => [
+                'pendingLeavesCount' => function() use ($request) {
+                    $user = $request->user();
+                    if (!$user) return 0;
+                    
+                    if ($user->hasRole('admin')) {
+                        $supervisors = User::role('supervisor')->pluck('id');
+                        return Leave::whereIn('user_id', $supervisors)->where('status', 'pending')->count();
+                    }
+                    
+                    if ($user->hasRole('supervisor')) {
+                        $subordinateIds = $user->subordinates()->pluck('id');
+                        return Leave::whereIn('user_id', $subordinateIds)->where('status', 'pending')->count();
+                    }
+                    
+                    return 0;
+                }
             ],
         ];
     }
