@@ -94,6 +94,13 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
         });
     };
 
+    const formatDuration = (minutes) => {
+        if (!minutes) return '—';
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${h}j ${m > 0 ? `${m}m` : ''}`.trim();
+    };
+
     // Render clock out modal
     const renderClockOutModal = () => {
         if (!showClockOutModal) return null;
@@ -302,17 +309,14 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
 
                 {/* Recent History Table */}
                 {/* Riwayat Absensi Terintegrasi */}
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden">
-                    <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-slate-50 text-slate-500 rounded-xl flex items-center justify-center">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-                            </div>
-                            <h3 className="text-xl font-black text-slate-900 tracking-tight">Riwayat Presensi</h3>
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/30 overflow-hidden">
+                    <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h3 className="text-xl font-black text-slate-900">Riwayat Presensi</h3>
+                            <p className="text-sm font-medium text-slate-500 mt-1">
+                                30 Hari Terakhir
+                            </p>
                         </div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg">
-                            30 Hari Terakhir
-                        </span>
                     </div>
 
                     {recentAttendances?.length > 0 ? (
@@ -320,73 +324,65 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
                             <table className="w-full">
                                 <thead>
                                     <tr className="bg-slate-50/50">
-                                        <th className="text-left px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hari & Tanggal</th>
-                                        <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Masuk</th>
-                                        <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Keluar</th>
-                                        <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Durasi</th>
-                                        <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                        <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Tanggal</th>
+                                        <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Status</th>
+                                        <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Jam Masuk</th>
+                                        <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Jam Keluar</th>
+                                        <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Durasi Kerja</th>
+                                        <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Tugas Dikerjakan</th>
+                                        <th className="text-left px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Keterangan</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
-                                    {recentAttendances.map((att) => (
-                                        <tr key={att.id} className="hover:bg-slate-50/80 transition-colors group">
-                                            <td className="px-8 py-5">
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-black text-slate-900 leading-tight">
+                                    {recentAttendances.map((att) => {
+                                        const isPresent = att.status === 'hadir';
+                                        return (
+                                            <tr key={att.id} className="hover:bg-slate-50/50 transition-colors group">
+                                                <td className="px-6 py-5">
+                                                    <p className="text-sm font-bold text-slate-900 leading-tight">
                                                         {new Date(att.date).toLocaleDateString('id-ID', { weekday: 'long' })}
-                                                    </span>
-                                                    <span className="text-xs font-bold text-slate-400 mt-0.5">
+                                                    </p>
+                                                    <p className="text-xs font-medium text-slate-400 mt-0.5">
                                                         {new Date(att.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5 text-center">
-                                                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 text-slate-700 rounded-xl font-black text-sm font-mono border border-slate-100 group-hover:border-blue-200 transition-colors">
-                                                    <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                    {att.clock_in_time.substring(0, 5)}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5 text-center">
-                                                {att.clock_out_time ? (
-                                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-xl font-black text-sm font-mono border border-emerald-100">
-                                                        <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                        {att.clock_out_time.substring(0, 5)}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-slate-400 italic">—</span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-5 text-center">
-                                                {att.duration_minutes ? (
-                                                    <span className="text-sm font-black text-slate-700">{Math.floor(att.duration_minutes / 60)}h {att.duration_minutes % 60}m</span>
-                                                ) : (
-                                                    <span className="text-xs text-slate-400 italic">—</span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-5 text-center">
-                                                <div className="flex flex-col items-center gap-1">
-                                                    {att.is_late ? (
-                                                        <span className="inline-flex px-3 py-1 text-[9px] font-black uppercase tracking-wider text-rose-600 bg-rose-50 rounded-lg border border-rose-100">
-                                                            Terlambat – {att.late_minutes}m
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex px-3 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 rounded-lg border border-emerald-100">
-                                                            Tepat Waktu
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                    </p>
+                                                </td>
+                                                <td className="px-4 py-5 text-center">
+                                                    {att.status === 'hadir' && !att.is_late && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-100 text-emerald-700">Hadir</span>}
+                                                    {att.status === 'hadir' && att.is_late && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-amber-100 text-amber-700">Terlambat</span>}
+                                                    {att.status === 'izin' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-sky-100 text-sky-700">Izin</span>}
+                                                    {att.status === 'alpha' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-red-100 text-red-700">Alpha</span>}
+                                                    {att.status === 'libur' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 text-slate-700">Libur</span>}
+                                                </td>
+                                                <td className="px-4 py-5 text-center">
+                                                    {isPresent ? <span className="text-sm font-bold text-slate-700 font-mono">{att.clock_in_time ? att.clock_in_time.substring(0, 5) : "—"}</span> : <span className="text-sm text-slate-300">—</span>}
+                                                </td>
+                                                <td className="px-4 py-5 text-center">
+                                                    {isPresent ? <span className="text-sm font-bold text-slate-700 font-mono">{att.clock_out_time ? att.clock_out_time.substring(0, 5) : "—"}</span> : <span className="text-sm text-slate-300">—</span>}
+                                                </td>
+                                                <td className="px-4 py-5 text-center">
+                                                    {isPresent && att.duration_minutes ? <span className="text-sm font-bold text-slate-700 font-mono">{formatDuration(att.duration_minutes)}</span> : <span className="text-sm text-slate-300">—</span>}
+                                                </td>
+                                                <td className="px-4 py-5 text-center">
+                                                    {isPresent && att.work_report ? <p className="text-sm text-slate-600 truncate max-w-[200px] mx-auto" title={att.work_report}>{att.work_report}</p> : <span className="text-sm text-slate-300">—</span>}
+                                                </td>
+                                                <td className="px-4 py-5">
+                                                    {att.status === 'hadir' && !att.is_late && <span className="text-sm text-slate-300">—</span>}
+                                                    {att.status === 'hadir' && att.is_late && <span className="text-sm text-orange-500 font-medium italic">Terlambat – {att.late_minutes}m</span>}
+                                                    {att.status === 'izin' && <span className="text-sm text-slate-500 italic">"{att.leave_reason || "—"}"</span>}
+                                                    {(att.status === 'alpha' || att.status === 'libur') && <span className="text-sm text-slate-300">—</span>}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
                     ) : (
-                        <div className="py-20 text-center flex flex-col items-center">
+                        <div className="py-20 text-center flex flex-col items-center text-slate-400">
                             <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-2xl flex items-center justify-center mb-4">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
                             </div>
-                            <p className="text-sm font-black text-slate-300 uppercase tracking-widest italic">Belum ada riwayat presensi</p>
+                            <p className="font-black uppercase tracking-[0.2em] text-[10px] text-slate-300">Belum ada riwayat presensi</p>
                         </div>
                     )}
                 </div>
