@@ -168,7 +168,8 @@ export default function AdminOfficesCreate() {
         latitude: '',
         longitude: '',
         radius_meters: 200,
-        working_hour_start: '08:30',
+        clock_in_time: '08:00',
+        clock_out_time: '17:00',
         working_days: [1, 2, 3, 4, 5, 6],
     });
 
@@ -282,12 +283,27 @@ export default function AdminOfficesCreate() {
                                                 </div>
                                                 <input 
                                                     type="time" 
-                                                    value={data.working_hour_start} 
-                                                    onChange={(e) => setData('working_hour_start', e.target.value)} 
+                                                    value={data.clock_in_time} 
+                                                    onChange={(e) => setData('clock_in_time', e.target.value)} 
                                                     className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:bg-white focus:ring-4 focus:ring-primary-100 transition-all font-black text-slate-900 placeholder-slate-300 shadow-inner tabular-nums" 
                                                 />
                                             </div>
-                                            {errors.working_hour_start && <p className="text-rose-500 text-xs font-bold mt-2 ml-1">⚠️ {errors.working_hour_start}</p>}
+                                            {errors.clock_in_time && <p className="text-rose-500 text-xs font-bold mt-2 ml-1">⚠️ {errors.clock_in_time}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Jam Pulang</label>
+                                            <div className="relative group">
+                                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-primary-500">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                </div>
+                                                <input 
+                                                    type="time" 
+                                                    value={data.clock_out_time} 
+                                                    onChange={(e) => setData('clock_out_time', e.target.value)} 
+                                                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:bg-white focus:ring-4 focus:ring-primary-100 transition-all font-black text-slate-900 placeholder-slate-300 shadow-inner tabular-nums" 
+                                                />
+                                            </div>
+                                            {errors.clock_out_time && <p className="text-rose-500 text-xs font-bold mt-2 ml-1">⚠️ {errors.clock_out_time}</p>}
                                         </div>
                                         <div className="sm:col-span-2">
                                             <div className="flex items-center justify-between mb-2 ml-1">

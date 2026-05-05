@@ -27,7 +27,7 @@ class SupervisorController extends Controller
                 $todayAttendance = $member->attendances()
                     ->whereDate('date', today())
                     ->first();
-                
+
                 if ($todayAttendance) {
                     $member->today_status = 'hadir';
                 } else {
@@ -37,7 +37,7 @@ class SupervisorController extends Controller
                         ->whereDate('start_date', '<=', today())
                         ->whereDate('end_date', '>=', today())
                         ->first();
-                    
+
                     if ($approvedLeave) {
                         $member->today_status = 'izin';
                     } elseif ($member->office && !$member->office->isWorkingDay(today())) {
@@ -60,7 +60,7 @@ class SupervisorController extends Controller
                 ->whereDate('date', $date)
                 ->where('status', 'hadir')
                 ->count();
-            
+
             $dayLeavesCount = Leave::whereIn('user_id', $subordinateIds)
                 ->where('status', 'approved')
                 ->whereDate('start_date', '<=', $date)
@@ -70,7 +70,7 @@ class SupervisorController extends Controller
             // Calculate alpha only for those supposed to work today
             $expectedToWorkCount = User::whereIn('id', $subordinateIds)
                 ->get()
-                ->filter(function($u) use ($date) {
+                ->filter(function ($u) use ($date) {
                     return !$u->office || $u->office->isWorkingDay($date);
                 })->count();
 
@@ -89,7 +89,7 @@ class SupervisorController extends Controller
             ->whereMonth('date', now()->month)
             ->whereYear('date', now()->year)
             ->get();
-        
+
         $monthLeavesCount = Leave::whereIn('user_id', $subordinateIds)
             ->where('status', 'approved')
             ->whereMonth('start_date', '<=', now()->month)
@@ -98,12 +98,12 @@ class SupervisorController extends Controller
         // For status distribution, we need to calculate alpha across the month correctly
         $totalAlpha = 0;
         $totalHadir = Attendance::whereIn('user_id', $subordinateIds)->whereMonth('date', now()->month)->whereYear('date', now()->year)->count();
-        
+
         // Accurate month-to-date alpha calculation
         $subordinatesData = User::whereIn('id', $subordinateIds)->with('office')->get();
         for ($d = 1; $d <= now()->day; $d++) {
             $currentDate = now()->copy()->day($d);
-            
+
             foreach ($subordinatesData as $member) {
                 // Skip if not a working day
                 if ($member->office && !$member->office->isWorkingDay($currentDate)) continue;
@@ -143,7 +143,7 @@ class SupervisorController extends Controller
     public function schedule(Request $request)
     {
         $user = $request->user();
-        $subordinates = $user->subordinates()->select('id', 'name', 'email', 'office_id')->with('office:id,working_hour_start,working_days')->get();
+        $subordinates = $user->subordinates()->select('id', 'name', 'email', 'office_id')->with(['office:id,working_days', 'office.workSchedule:id,office_id,clock_in_time'])->get();
         $subordinateIds = $subordinates->pluck('id');
 
         // ========== DAILY VIEW ==========
@@ -167,9 +167,9 @@ class SupervisorController extends Controller
             $leave = $dailyLeaves->get($member->id);
 
             $isLate = false;
-            if ($attendance && $member->office && $member->office->working_hour_start) {
+            if ($attendance && $member->office?->workSchedule?->clock_in_time) {
                 $clockIn = Carbon::parse($attendance->clock_in_time);
-                $startTime = Carbon::parse($member->office->working_hour_start);
+                $startTime = Carbon::parse($member->office->workSchedule->clock_in_time);
                 $isLate = $clockIn->greaterThan($startTime);
             }
 
@@ -209,8 +209,8 @@ class SupervisorController extends Controller
             $hadirCount = $attendances->count();
 
             $lateCount = 0;
-            if ($member->office && $member->office->working_hour_start) {
-                $startTime = Carbon::parse($member->office->working_hour_start);
+            if ($member->office?->workSchedule?->clock_in_time) {
+                $startTime = Carbon::parse($member->office->workSchedule->clock_in_time);
                 $lateCount = $attendances->filter(function ($a) use ($startTime) {
                     return $a->clock_in_time && Carbon::parse($a->clock_in_time)->greaterThan($startTime);
                 })->count();
@@ -228,16 +228,16 @@ class SupervisorController extends Controller
             $izinCount = 0;
             for ($d = 1; $d <= $maxDay; $d++) {
                 $currentDate = $monthDate->copy()->day($d);
-                
+
                 // Check if attended
-                $hasAttended = $attendances->contains(function($a) use ($currentDate) {
+                $hasAttended = $attendances->contains(function ($a) use ($currentDate) {
                     return Carbon::parse($a->date)->isSameDay($currentDate);
                 });
-                
+
                 if ($hasAttended) continue;
 
                 // Check if on leave
-                $isOnLeave = $leaves->contains(function($l) use ($currentDate) {
+                $isOnLeave = $leaves->contains(function ($l) use ($currentDate) {
                     return $currentDate->between(Carbon::parse($l->start_date)->startOfDay(), Carbon::parse($l->end_date)->endOfDay());
                 });
 
@@ -355,5 +355,75 @@ class SupervisorController extends Controller
         ]);
 
         return back()->with('success', 'Izin berhasil ditolak.');
+    }
+
+    /**
+     * Show attendance history of team members with filters.
+     */
+    public function attendanceHistory(Request $request)
+    {
+        $user = $request->user();
+        $subordinateIds = $user->subordinates()->pluck('id');
+
+        // Get filter parameters
+        $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date'))->startOfDay() : Carbon::today()->subDays(30)->startOfDay();
+        $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date'))->endOfDay() : Carbon::today()->endOfDay();
+        $nameFilter = $request->input('name', '');
+
+        // Base query
+        $query = Attendance::whereIn('user_id', $subordinateIds)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->with('user:id,name,email');
+
+        // Apply name filter
+        if ($nameFilter) {
+            $query->whereHas('user', function ($q) use ($nameFilter) {
+                $q->where('name', 'like', "%{$nameFilter}%");
+            });
+        }
+
+        // Order by date descending (newest first)
+        $attendances = $query->orderByDesc('date')
+            ->orderByDesc('clock_in_time')
+            ->paginate(50);
+
+        // Format the data for display
+        $formattedAttendances = $attendances->map(function ($att) {
+            $durationText = '—';
+            if ($att->duration_minutes) {
+                $hours = intdiv($att->duration_minutes, 60);
+                $minutes = $att->duration_minutes % 60;
+                $durationText = "{$hours}h " . ($minutes > 0 ? "{$minutes}m" : "");
+            }
+
+            $statusBadge = $att->is_late ? "Terlambat – {$att->late_minutes}m" : 'Tepat Waktu';
+
+            return [
+                'id' => $att->id,
+                'user_id' => $att->user_id,
+                'user_name' => $att->user->name,
+                'date' => $att->date->format('d/m/Y'),
+                'clock_in_time' => $att->clock_in_time,
+                'clock_out_time' => $att->clock_out_time ?? '—',
+                'duration' => $durationText,
+                'status_badge' => $statusBadge,
+                'work_report' => $att->work_report ?? '—',
+            ];
+        });
+
+        return Inertia::render('Supervisor/AttendanceHistory', [
+            'attendances' => $formattedAttendances,
+            'pagination' => [
+                'total' => $attendances->total(),
+                'per_page' => $attendances->perPage(),
+                'current_page' => $attendances->currentPage(),
+                'last_page' => $attendances->lastPage(),
+            ],
+            'filters' => [
+                'start_date' => $startDate->format('Y-m-d'),
+                'end_date' => $endDate->format('Y-m-d'),
+                'name' => $nameFilter,
+            ],
+        ]);
     }
 }

@@ -14,7 +14,7 @@ class OfficeController extends Controller
      */
     public function index(Request $request)
     {
-        $offices = Office::withCount('users')
+        $offices = Office::withCount('users')->with('workSchedule')
             ->when($request->search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
             })
@@ -52,11 +52,17 @@ class OfficeController extends Controller
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'radius_meters' => 'required|integer|min:10|max:10000',
-            'working_hour_start' => 'required|string',
+            'clock_in_time' => 'required|date_format:H:i',
+            'clock_out_time' => 'required|date_format:H:i|after:clock_in_time',
             'working_days' => 'required|array|min:1',
         ]);
 
-        Office::create($request->only(['name', 'latitude', 'longitude', 'radius_meters', 'working_hour_start', 'working_days']));
+        $office = Office::create($request->only(['name', 'latitude', 'longitude', 'radius_meters', 'working_days']));
+
+        $office->workSchedule()->create([
+            'clock_in_time' => $request->clock_in_time . ':00',
+            'clock_out_time' => $request->clock_out_time . ':00',
+        ]);
 
         return redirect()->route('admin.offices.index')
             ->with('success', 'Kantor berhasil ditambahkan.');
@@ -68,7 +74,7 @@ class OfficeController extends Controller
     public function edit(Office $office)
     {
         return Inertia::render('Admin/Offices/Edit', [
-            'office' => $office,
+            'office' => $office->load('workSchedule'),
         ]);
     }
 
@@ -82,11 +88,20 @@ class OfficeController extends Controller
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'radius_meters' => 'required|integer|min:10|max:10000',
-            'working_hour_start' => 'required|string',
+            'clock_in_time' => 'required|date_format:H:i',
+            'clock_out_time' => 'required|date_format:H:i|after:clock_in_time',
             'working_days' => 'required|array|min:1',
         ]);
 
-        $office->update($request->only(['name', 'latitude', 'longitude', 'radius_meters', 'working_hour_start', 'working_days']));
+        $office->update($request->only(['name', 'latitude', 'longitude', 'radius_meters', 'working_days']));
+
+        $office->workSchedule()->updateOrCreate(
+            ['office_id' => $office->id],
+            [
+                'clock_in_time' => $request->clock_in_time . ':00',
+                'clock_out_time' => $request->clock_out_time . ':00',
+            ]
+        );
 
         return redirect()->route('admin.offices.index')
             ->with('success', 'Data kantor berhasil diperbarui.');

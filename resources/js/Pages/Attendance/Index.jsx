@@ -6,15 +6,22 @@ import { useState, useCallback, lazy, Suspense } from 'react';
 // Pastikan path './Partials/MapSection' sesuai dengan lokasi file baru kamu
 const MapSection = lazy(() => import('./Partials/MapSection'));
 
-export default function AttendanceIndex({ office, todayAttendance, recentAttendances }) {
+export default function AttendanceIndex({ office, workSchedule, todayAttendance, recentAttendances }) {
     const [position, setPosition] = useState(null);
     const [locationError, setLocationError] = useState('');
     const [gettingLocation, setGettingLocation] = useState(false);
+    const [showClockOutModal, setShowClockOutModal] = useState(false);
+    const [canClockOutEnabled, setCanClockOutEnabled] = useState(false);
+    const [clockOutMessage, setClockOutMessage] = useState('');
     const { errors } = usePage().props;
 
     const { data, setData, post, processing } = useForm({
         latitude: '',
         longitude: '',
+    });
+
+    const { data: clockOutData, setData: setClockOutData, post: postClockOut, processing: clockOutProcessing, errors: clockOutErrors } = useForm({
+        work_report: '',
     });
 
     const getLocation = useCallback(() => {
@@ -54,16 +61,101 @@ export default function AttendanceIndex({ office, todayAttendance, recentAttenda
         post(route('attendance.clockIn'));
     };
 
+    // Check if can clock out
+    const checkCanClockOut = useCallback(() => {
+        fetch(route('attendance.canClockOut'))
+            .then(res => res.json())
+            .then(data => {
+                setCanClockOutEnabled(data.canClockOut);
+                setClockOutMessage(data.message);
+            })
+            .catch(err => console.error('Error checking clock out status:', err));
+    }, []);
+
+    const handleClockOutSubmit = (e) => {
+        e.preventDefault();
+        postClockOut(route('attendance.clockOut'), {
+            onSuccess: () => {
+                setShowClockOutModal(false);
+                setClockOutData({ work_report: '' });
+            },
+        });
+    };
+
     const statusConfig = {
-        hadir: { label: 'Hadir', color: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500', icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg> },
-        izin: { label: 'Izin', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500', icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> },
-        alpha: { label: 'Alpha', color: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400', icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg> },
+        hadir: { label: 'Hadir', color: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500', icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg> },
+        izin: { label: 'Izin', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500', icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> },
+        alpha: { label: 'Alpha', color: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400', icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg> },
     };
 
     const formatDate = (dateStr) => {
         return new Date(dateStr).toLocaleDateString('id-ID', {
             weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
         });
+    };
+
+    // Render clock out modal
+    const renderClockOutModal = () => {
+        if (!showClockOutModal) return null;
+
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+                <div className="bg-white rounded-[2rem] max-w-md w-full p-8 shadow-2xl">
+                    <div className="mb-6">
+                        <h3 className="text-2xl font-black text-slate-900 mb-2">Clock Out</h3>
+                        <p className="text-slate-500 font-medium text-sm">Silakan isi laporan pekerjaan Anda hari ini sebelum clock out.</p>
+                    </div>
+
+                    <form onSubmit={handleClockOutSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-black uppercase tracking-widest text-slate-600 mb-2">
+                                Pekerjaan yang Dilakukan *
+                            </label>
+                            <textarea
+                                value={clockOutData.work_report}
+                                onChange={(e) => setClockOutData({ work_report: e.target.value })}
+                                placeholder="Tuliskan ringkasan pekerjaan Anda (minimal 20 karakter)..."
+                                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                rows="4"
+                            />
+                            {clockOutErrors.work_report && (
+                                <p className="text-xs text-rose-500 mt-1 font-semibold">{clockOutErrors.work_report}</p>
+                            )}
+                            <p className="text-xs text-slate-400 mt-1">
+                                {clockOutData.work_report.length} / 20 karakter (minimal)
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3 pt-4">
+                            <button
+                                type="button"
+                                onClick={() => setShowClockOutModal(false)}
+                                className="flex-1 px-4 py-3 border border-slate-200 text-slate-700 font-black text-sm uppercase tracking-wider rounded-xl hover:bg-slate-50 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={clockOutProcessing || clockOutData.work_report.length < 20}
+                                className="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-black text-sm uppercase tracking-wider rounded-xl hover:from-green-500 hover:to-emerald-500 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {clockOutProcessing ? (
+                                    <>
+                                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        Memproses...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        Clock Out
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -76,30 +168,54 @@ export default function AttendanceIndex({ office, todayAttendance, recentAttenda
                         {/* Decorative background element */}
                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
                         <div className="absolute -right-12 -top-12 w-48 h-48 bg-blue-50 rounded-full opacity-50 group-hover:scale-110 transition-transform duration-700"></div>
-                        
+
                         <div className="relative z-10">
                             <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-emerald-500/20 group-hover:rotate-6 transition-transform">
-                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
                             </div>
-                            <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Presensi Berhasil!</h2>
-                            <p className="text-slate-500 font-medium mb-6">Kamu telah tercatat masuk untuk hari ini.</p>
-                            
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Presensi Tercatat!</h2>
+                            <p className="text-slate-500 font-medium mb-6">Status presensi Anda untuk hari ini:</p>
+
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
                                 <div className="px-6 py-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-                                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <span className="text-sm font-black text-slate-700 ont-mono">{todayAttendance.clock_in_time}</span>
+                                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <span className="text-sm font-black text-slate-700 font-mono">{todayAttendance.clock_in_time}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className={`inline-flex px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-sm ${statusConfig[todayAttendance.status]?.color}`}>
-                                        {statusConfig[todayAttendance.status]?.label}
-                                    </span>
-                                    {office?.working_hour_start && todayAttendance.clock_in_time > office.working_hour_start && (
-                                        <span className="inline-flex px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-sm bg-rose-50 text-rose-500 border border-rose-100 italic">
-                                            Terlambat
-                                        </span>
-                                    )}
-                                </div>
+                                {todayAttendance.clock_out_time ? (
+                                    <div className="px-6 py-3 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center gap-3">
+                                        <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        <span className="text-sm font-black text-emerald-700 font-mono">{todayAttendance.clock_out_time}</span>
+                                    </div>
+                                ) : null}
                             </div>
+
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
+                                <span className={`inline-flex px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-sm ${statusConfig[todayAttendance.status]?.color}`}>
+                                    {statusConfig[todayAttendance.status]?.label}
+                                </span>
+                                {todayAttendance.is_late && (
+                                    <span className="inline-flex px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-sm bg-rose-50 text-rose-600 border border-rose-100">
+                                        Terlambat – {todayAttendance.late_minutes} menit
+                                    </span>
+                                )}
+                                {todayAttendance.clock_out_time && (
+                                    <span className="inline-flex px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-sm bg-sky-50 text-sky-600 border border-sky-100">
+                                        Durasi: {Math.floor(todayAttendance.duration_minutes / 60)}h {todayAttendance.duration_minutes % 60}m
+                                    </span>
+                                )}
+                            </div>
+
+                            {!todayAttendance.clock_out_time && (
+                                <button
+                                    onClick={() => {
+                                        checkCanClockOut();
+                                        setShowClockOutModal(true);
+                                    }}
+                                    className="px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white font-black text-sm uppercase tracking-widest rounded-xl hover:from-amber-500 hover:to-orange-500 transition shadow-lg"
+                                >
+                                    Clock Out
+                                </button>
+                            )}
                         </div>
                     </div>
                 ) : (
@@ -141,7 +257,7 @@ export default function AttendanceIndex({ office, todayAttendance, recentAttenda
                                     )}
                                 </div>
 
-                            {/* Action Buttons */}
+                                {/* Action Buttons */}
                                 <div className="flex flex-col sm:flex-row gap-4 mb-6">
                                     <button
                                         type="button"
@@ -166,12 +282,12 @@ export default function AttendanceIndex({ office, todayAttendance, recentAttenda
                                         {processing ? (
                                             <svg className="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                         ) : (
-                                            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+                                            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
                                         )}
                                         {processing ? 'Memproses...' : 'Submit Presensi'}
                                     </button>
                                 </div>
-                                
+
                                 {/* Error Message */}
                                 {(locationError || errors.location || errors.attendance) && (
                                     <div className="px-6 py-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-3 text-rose-600">
@@ -205,7 +321,9 @@ export default function AttendanceIndex({ office, todayAttendance, recentAttenda
                                 <thead>
                                     <tr className="bg-slate-50/50">
                                         <th className="text-left px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hari & Tanggal</th>
-                                        <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Waktu Masuk</th>
+                                        <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Masuk</th>
+                                        <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Keluar</th>
+                                        <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Durasi</th>
                                         <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                                     </tr>
                                 </thead>
@@ -223,23 +341,40 @@ export default function AttendanceIndex({ office, todayAttendance, recentAttenda
                                                 </div>
                                             </td>
                                             <td className="px-6 py-5 text-center">
-                                                <div className="flex flex-col items-center gap-1">
-                                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 text-slate-700 rounded-xl font-black text-sm font-mono border border-slate-100 group-hover:border-blue-200 transition-colors">
-                                                        <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                                        {att.clock_in_time.substring(0, 5)}
-                                                    </div>
-                                                    {office?.working_hour_start && att.clock_in_time > office.working_hour_start && (
-                                                        <span className="text-[9px] font-black uppercase tracking-wider text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded-md">
-                                                            Terlambat
-                                                        </span>
-                                                    )}
+                                                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 text-slate-700 rounded-xl font-black text-sm font-mono border border-slate-100 group-hover:border-blue-200 transition-colors">
+                                                    <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                    {att.clock_in_time.substring(0, 5)}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-5 text-center">
-                                                <span className={`inline-flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm ${statusConfig[att.status]?.color}`}>
-                                                    {statusConfig[att.status]?.icon}
-                                                    {statusConfig[att.status]?.label}
-                                                </span>
+                                                {att.clock_out_time ? (
+                                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-xl font-black text-sm font-mono border border-emerald-100">
+                                                        <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                        {att.clock_out_time.substring(0, 5)}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400 italic">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-5 text-center">
+                                                {att.duration_minutes ? (
+                                                    <span className="text-sm font-black text-slate-700">{Math.floor(att.duration_minutes / 60)}h {att.duration_minutes % 60}m</span>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400 italic">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-5 text-center">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    {att.is_late ? (
+                                                        <span className="inline-flex px-3 py-1 text-[9px] font-black uppercase tracking-wider text-rose-600 bg-rose-50 rounded-lg border border-rose-100">
+                                                            Terlambat – {att.late_minutes}m
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex px-3 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 rounded-lg border border-emerald-100">
+                                                            Tepat Waktu
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -249,12 +384,15 @@ export default function AttendanceIndex({ office, todayAttendance, recentAttenda
                     ) : (
                         <div className="py-20 text-center flex flex-col items-center">
                             <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-2xl flex items-center justify-center mb-4">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </div>
                             <p className="text-sm font-black text-slate-300 uppercase tracking-widest italic">Belum ada riwayat presensi</p>
                         </div>
                     )}
                 </div>
+
+                {/* Clock Out Modal */}
+                {renderClockOutModal()}
             </div>
         </AuthenticatedLayout>
     );

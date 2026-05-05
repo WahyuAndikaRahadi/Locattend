@@ -28,19 +28,48 @@ class DashboardController extends Controller
             ->whereDate('date', today())
             ->first();
 
-        // If no attendance, check for approved leaves today
-        if (!$todayAttendance) {
+        // Build attendance status display
+        $attendanceStatus = null;
+        $attendanceStatusBadge = null;
+
+        if ($todayAttendance) {
+            if ($todayAttendance->clock_out_time) {
+                // Fully clocked out
+                $hours = intdiv($todayAttendance->duration_minutes, 60);
+                $minutes = $todayAttendance->duration_minutes % 60;
+                $durationText = "{$hours} jam " . ($minutes > 0 ? "{$minutes} menit" : "");
+
+                $attendanceStatus = "Sudah Absen Keluar ({$todayAttendance->clock_out_time}) — Durasi: {$durationText}";
+
+                if ($todayAttendance->is_late) {
+                    $attendanceStatusBadge = "Terlambat – {$todayAttendance->late_minutes} menit";
+                } else {
+                    $attendanceStatusBadge = 'Tepat Waktu';
+                }
+            } else {
+                // Only clocked in
+                $attendanceStatus = "Sudah Absen Masuk ({$todayAttendance->clock_in_time})";
+
+                if ($todayAttendance->is_late) {
+                    $attendanceStatusBadge = "Terlambat – {$todayAttendance->late_minutes} menit";
+                } else {
+                    $attendanceStatusBadge = 'Tepat Waktu';
+                }
+            }
+        } else {
+            // Check for approved leaves today
             $approvedTodayLeave = $user->leaves()
                 ->where('status', 'approved')
                 ->whereDate('start_date', '<=', today())
                 ->whereDate('end_date', '>=', today())
                 ->first();
-            
+
             if ($approvedTodayLeave) {
-                $todayAttendance = (object)[
-                    'status' => 'izin', // Merge 'cuti' -> 'izin' for UI
-                    'clock_in_time' => null
-                ];
+                $attendanceStatus = 'Izin';
+                $attendanceStatusBadge = 'Izin Disetujui';
+            } else {
+                $attendanceStatus = 'Belum Absen';
+                $attendanceStatusBadge = null;
             }
         }
 
@@ -53,6 +82,8 @@ class DashboardController extends Controller
         $data = [
             'role' => $role,
             'todayAttendance' => $todayAttendance,
+            'attendanceStatus' => $attendanceStatus,
+            'attendanceStatusBadge' => $attendanceStatusBadge,
             'pendingLeavesCount' => $pendingLeavesCount,
             'office' => $user->office,
         ];
@@ -66,7 +97,7 @@ class DashboardController extends Controller
                 ->whereDate('date', today())
                 ->where('status', 'hadir')
                 ->count();
-            
+
             $data['teamOnLeaveToday'] = Leave::whereIn('user_id', $teamIds)
                 ->where('status', 'approved')
                 ->whereDate('start_date', '<=', today())
@@ -116,7 +147,6 @@ class DashboardController extends Controller
                 ];
             }
             $data['attendanceTrends'] = $trends;
-
         }
 
         return Inertia::render('Dashboard', $data);

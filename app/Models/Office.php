@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Carbon\Carbon;
 
 class Office extends Model
@@ -16,7 +17,6 @@ class Office extends Model
         'latitude',
         'longitude',
         'radius_meters',
-        'working_hour_start',
         'working_days',
     ];
 
@@ -36,6 +36,14 @@ class Office extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * Get the work schedule for this office.
+     */
+    public function workSchedule(): HasOne
+    {
+        return $this->hasOne(WorkSchedule::class);
     }
 
     /**
@@ -71,8 +79,8 @@ class Office extends Model
         $lngDiff = $lngTo - $lngFrom;
 
         $a = sin($latDiff / 2) ** 2 +
-             cos($latFrom) * cos($latTo) *
-             sin($lngDiff / 2) ** 2;
+            cos($latFrom) * cos($latTo) *
+            sin($lngDiff / 2) ** 2;
 
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 

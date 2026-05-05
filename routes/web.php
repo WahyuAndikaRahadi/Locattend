@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\OfficeController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WorkScheduleController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeaveController;
@@ -12,12 +13,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return redirect('/login');
 });
 
 // Authenticated routes
@@ -33,6 +29,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Attendance routes (karyawan + supervisor can clock-in)
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
     Route::post('/attendance/clock-in', [AttendanceController::class, 'clockIn'])->name('attendance.clockIn');
+    Route::post('/attendance/clock-out', [AttendanceController::class, 'clockOut'])->name('attendance.clockOut');
+    Route::get('/attendance/can-clock-out', [AttendanceController::class, 'canClockOut'])->name('attendance.canClockOut');
     Route::get('/attendance/history', [AttendanceController::class, 'history'])->name('attendance.history');
 
     // Leave routes (karyawan + supervisor can submit leaves)
@@ -42,6 +40,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:supervisor|admin')->prefix('supervisor')->name('supervisor.')->group(function () {
         Route::get('/team', [SupervisorController::class, 'team'])->name('team');
         Route::get('/schedule', [SupervisorController::class, 'schedule'])->name('schedule');
+        Route::get('/attendance-history', [SupervisorController::class, 'attendanceHistory'])->name('attendanceHistory');
         Route::get('/leaves', [SupervisorController::class, 'leaves'])->name('leaves.index');
         Route::post('/leaves/{leave}/approve', [SupervisorController::class, 'approveLeave'])->name('leaves.approve');
         Route::post('/leaves/{leave}/reject', [SupervisorController::class, 'rejectLeave'])->name('leaves.reject');
@@ -52,9 +51,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/team', [UserController::class, 'team'])->name('team');
         Route::get('/schedule', [UserController::class, 'schedule'])->name('schedule');
         Route::get('/leaves', [UserController::class, 'leaves'])->name('leaves.index');
+        Route::get('/work-schedules', [WorkScheduleController::class, 'index'])->name('workSchedules.index');
+        Route::post('/work-schedules', [WorkScheduleController::class, 'store'])->name('workSchedules.store');
+        Route::delete('/work-schedules/{workSchedule}', [WorkScheduleController::class, 'destroy'])->name('workSchedules.destroy');
         Route::resource('users', UserController::class);
         Route::resource('offices', OfficeController::class);
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

@@ -348,7 +348,7 @@ class UserController extends Controller
             ->when($office_id, function ($query, $officeId) {
                 $query->where('office_id', $officeId);
             })
-            ->with(['office:id,name,working_hour_start,working_days'])
+            ->with(['office:id,name,working_days', 'office.workSchedule:id,office_id,clock_in_time'])
             ->get();
         
         $userIds = $users->pluck('id');
@@ -374,9 +374,9 @@ class UserController extends Controller
             $leave = $dailyLeaves->get($member->id);
 
             $isLate = false;
-            if ($attendance && $member->office && $member->office->working_hour_start) {
+            if ($attendance && $member->office?->workSchedule?->clock_in_time) {
                 $clockIn = Carbon::parse($attendance->clock_in_time);
-                $startTime = Carbon::parse($member->office->working_hour_start);
+                $startTime = Carbon::parse($member->office->workSchedule->clock_in_time);
                 $isLate = $clockIn->greaterThan($startTime);
             }
 
@@ -419,8 +419,8 @@ class UserController extends Controller
 
             // Check how many times they were late
             $lateCount = 0;
-            if ($member->office && $member->office->working_hour_start) {
-                $startTime = Carbon::parse($member->office->working_hour_start);
+            if ($member->office?->workSchedule?->clock_in_time) {
+                $startTime = Carbon::parse($member->office->workSchedule->clock_in_time);
                 $lateCount = $attendances->filter(function ($a) use ($startTime) {
                     return $a->clock_in_time && Carbon::parse($a->clock_in_time)->greaterThan($startTime);
                 })->count();
