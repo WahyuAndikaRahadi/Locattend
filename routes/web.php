@@ -40,6 +40,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:supervisor|admin')->prefix('supervisor')->name('supervisor.')->group(function () {
         Route::get('/team', [SupervisorController::class, 'team'])->name('team');
         Route::get('/schedule', [SupervisorController::class, 'schedule'])->name('schedule');
+        Route::get('/export-presensi', [SupervisorController::class, 'exportPresensi'])->name('export-presensi');
         Route::get('/attendance-history', [SupervisorController::class, 'attendanceHistory'])->name('attendanceHistory');
         Route::get('/leaves', [SupervisorController::class, 'leaves'])->name('leaves.index');
         Route::post('/leaves/{leave}/approve', [SupervisorController::class, 'approveLeave'])->name('leaves.approve');
@@ -50,6 +51,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/team', [UserController::class, 'team'])->name('team');
         Route::get('/schedule', [UserController::class, 'schedule'])->name('schedule');
+        Route::get('/export-presensi', [UserController::class, 'exportPresensi'])->name('export-presensi');
         Route::get('/leaves', [UserController::class, 'leaves'])->name('leaves.index');
         Route::get('/work-schedules', [WorkScheduleController::class, 'index'])->name('workSchedules.index');
         Route::post('/work-schedules', [WorkScheduleController::class, 'store'])->name('workSchedules.store');

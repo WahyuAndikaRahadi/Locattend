@@ -189,6 +189,9 @@ class SupervisorController extends Controller
                 'email' => $member->email,
                 'status' => $status,
                 'clock_in_time' => $attendance?->clock_in_time,
+                'clock_out_time' => $attendance?->clock_out_time,
+                'duration_minutes' => $attendance?->duration_minutes,
+                'work_report' => $attendance?->work_report,
                 'is_late' => $isLate,
                 'leave_reason' => $leave?->reason,
             ];
@@ -425,5 +428,151 @@ class SupervisorController extends Controller
                 'name' => $nameFilter,
             ],
         ]);
+    }
+
+    /**
+     * Export monthly attendance to Excel.
+     */
+    public function exportPresensi(Request $request, \App\Services\PresensiExportService $exportService)
+    {
+        $user = $request->user();
+        $subordinates = $user->subordinates()->select('id', 'name', 'email', 'office_id')->with(['office:id,name,working_days', 'office.workSchedule:id,office_id,clock_in_time'])->get();
+        
+        $selectedMonth = $request->input('bulan', now()->format('Y-m'));
+        $monthDate = Carbon::parse($selectedMonth . '-01');
+        $daysInMonth = $monthDate->copy()->endOfMonth()->day;
+        
+        // Capping to current day if it's the current month
+        $maxDay = $monthDate->isSameMonth(now()) ? now()->day : $daysInMonth;
+
+        $monthlyData = $subordinates->map(function ($member) use ($monthDate, $maxDay) {
+            $attendances = Attendance::where('user_id', $member->id)
+                ->whereYear('date', $monthDate->year)
+                ->whereMonth('date', $monthDate->month)
+                ->get()
+                ->keyBy(function($item) {
+                    return Carbon::parse($item->date)->format('Y-m-d');
+                });
+
+            $leaves = Leave::where('user_id', $member->id)
+                ->where('status', 'approved')
+                ->whereDate('start_date', '<=', $monthDate->copy()->endOfMonth())
+                ->whereDate('end_date', '>=', $monthDate->copy()->startOfMonth())
+                ->get();
+
+            $hadirCount = 0;
+            $terlambatCount = 0;
+            $izinCount = 0;
+            $alphaCount = 0;
+            $liburCount = 0;
+            $dailyRecords = [];
+
+            $startTime = $member->office?->workSchedule?->clock_in_time ? Carbon::parse($member->office->workSchedule->clock_in_time) : null;
+
+            for ($d = 1; $d <= $maxDay; $d++) {
+                $currentDate = $monthDate->copy()->day($d);
+                $dateString = $currentDate->format('Y-m-d');
+
+                $attendance = $attendances->get($dateString);
+
+                $isOnLeave = $leaves->first(function ($l) use ($currentDate) {
+                    return $currentDate->between(Carbon::parse($l->start_date)->startOfDay(), Carbon::parse($l->end_date)->endOfDay());
+                });
+
+                $isWorkingDay = $member->office ? $member->office->isWorkingDay($currentDate) : true;
+
+                $status = '';
+                $clockIn = '—';
+                $clockOut = '—';
+                $duration = '—';
+                $workReport = '—';
+                $keterangan = '—';
+
+                if ($attendance) {
+                    $clockIn = Carbon::parse($attendance->clock_in_time)->format('H:i');
+                    $clockOut = $attendance->clock_out_time ? Carbon::parse($attendance->clock_out_time)->format('H:i') : '—';
+                    if ($attendance->duration_minutes) {
+                        $h = intdiv($attendance->duration_minutes, 60);
+                        $m = $attendance->duration_minutes % 60;
+                        $duration = "{$h}j {$m}m";
+                    }
+                    $workReport = $attendance->work_report ?? '—';
+
+                    $isLate = false;
+                    if ($startTime && $attendance->clock_in_time) {
+                        $isLate = Carbon::parse($attendance->clock_in_time)->greaterThan($startTime);
+                    }
+
+                    if ($isLate || $attendance->is_late) {
+                        $status = 'terlambat';
+                        $terlambatCount++;
+                        $hadirCount++; 
+                        
+                        $lateMins = 0;
+                        if ($startTime && $attendance->clock_in_time) {
+                            $lateMins = Carbon::parse($attendance->clock_in_time)->diffInMinutes($startTime);
+                        } else {
+                            $lateMins = $attendance->late_minutes ?? 0;
+                        }
+                        $keterangan = "Terlambat {$lateMins} menit";
+                    } else {
+                        $status = 'hadir';
+                        $hadirCount++;
+                        $keterangan = '—';
+                    }
+                } elseif ($isOnLeave) {
+                    $status = 'izin';
+                    $izinCount++;
+                    $keterangan = $isOnLeave->reason;
+                } elseif (!$isWorkingDay) {
+                    $status = 'libur';
+                    $liburCount++;
+                } else {
+                    $status = 'alpha';
+                    $alphaCount++;
+                }
+
+                $dailyRecords[] = [
+                    'date_formatted' => $currentDate->format('d/m/Y'),
+                    'day_name' => $currentDate->translatedFormat('l'),
+                    'status' => $status,
+                    'clock_in' => $clockIn,
+                    'clock_out' => $clockOut,
+                    'duration' => $duration,
+                    'work_report' => $workReport,
+                    'keterangan' => $keterangan,
+                ];
+            }
+
+            return [
+                'id' => $member->id,
+                'name' => $member->name,
+                'office_name' => $member->office ? $member->office->name : '-',
+                'hadir' => $hadirCount,
+                'terlambat' => $terlambatCount,
+                'izin' => $izinCount,
+                'alpha' => $alphaCount,
+                'libur' => $liburCount,
+                'daily_records' => $dailyRecords,
+            ];
+        });
+
+        $spreadsheet = $exportService->export($monthlyData->toArray(), $monthDate, $user->name);
+
+        $namaSupervisor = str_replace(' ', '', $user->name);
+        $filename = "Presensi_{$namaSupervisor}_{$monthDate->translatedFormat('F')}{$monthDate->year}.xlsx";
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        
+        $response = new \Symfony\Component\HttpFoundation\StreamedResponse(
+            function () use ($writer) {
+                $writer->save('php://output');
+            }
+        );
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', 'attachment;filename="' . $filename . '"');
+        $response->headers->set('Cache-Control', 'max-age=0');
+        
+        return $response;
     }
 }

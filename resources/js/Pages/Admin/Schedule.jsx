@@ -7,13 +7,15 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
     const [date, setDate] = useState(selectedDate);
     const [month, setMonth] = useState(selectedMonth);
     const [officeId, setOfficeId] = useState(filters?.office_id || '');
+    const [filterName, setFilterName] = useState('Semua Karyawan');
+    const [filterStatus, setFilterStatus] = useState('Semua Status');
 
     const handleFilterChange = (params) => {
-        const query = { 
-            date, 
-            month, 
+        const query = {
+            date,
+            month,
             office_id: officeId,
-            ...params 
+            ...params
         };
         router.get(route('admin.schedule'), query, { preserveState: true, replace: true });
     };
@@ -61,6 +63,13 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
         return timeStr.substring(0, 5);
     };
 
+    const formatDuration = (minutes) => {
+        if (!minutes) return '—';
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${h}j ${m > 0 ? `${m}m` : ''}`.trim();
+    };
+
     const formatMonthLabel = (monthStr) => {
         const [year, month] = monthStr.split('-');
         const d = new Date(year, month - 1, 1);
@@ -85,11 +94,21 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
         terlambat: monthlyData?.reduce((sum, m) => sum + m.terlambat, 0) || 0,
     };
 
-    const statusConfig = {
-        hadir: { label: 'Hadir', color: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500' },
-        izin: { label: 'Izin', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500' },
-        alpha: { label: 'Alpha', color: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400' },
-    };
+    const allMembers = activeTab === 'daily' ? (dailyData || []) : (monthlyData || []);
+    const uniqueMembers = Array.from(new Set(allMembers.map(m => m.name))).filter(Boolean);
+
+    const filteredRiwayat = allMembers.filter(member => {
+        const matchName = filterName === 'Semua Karyawan' || member.name === filterName;
+        let matchStatus = true;
+        if (filterStatus !== 'Semua Status' && activeTab === 'daily') {
+            if (filterStatus === 'Hadir') matchStatus = member.status === 'hadir' && !member.is_late;
+            else if (filterStatus === 'Terlambat') matchStatus = member.status === 'hadir' && member.is_late;
+            else if (filterStatus === 'Izin') matchStatus = member.status === 'izin';
+            else if (filterStatus === 'Alpha') matchStatus = member.status === 'alpha';
+            else if (filterStatus === 'Libur') matchStatus = member.status === 'libur';
+        }
+        return matchName && matchStatus;
+    });
 
     return (
         <AuthenticatedLayout header="Jadwal Semua Karyawan">
@@ -100,35 +119,71 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                             Jadwal Semua {totalMembers ? `(${totalMembers})` : ''}
                         </h2>
                         <p className="text-slate-500 mt-1 font-medium">Pantau kehadiran harian dan rekap bulanan seluruh karyawan & supervisor.</p>
                     </div>
-
-                    <div className="flex items-center gap-1 bg-white rounded-2xl border border-slate-200 p-1.5 shadow-sm">
-                        <button
-                            onClick={() => setActiveTab('daily')}
-                            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
-                                activeTab === 'daily'
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                        {activeTab === 'monthly' ? (
+                            <div className="flex items-center gap-2">
+                                <div className="relative">
+                                    <select
+                                        value={officeId}
+                                        onChange={(e) => setOfficeId(e.target.value)}
+                                        className="pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer appearance-none min-w-[140px]"
+                                        style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                                    >
+                                        <option value="">Semua Kantor</option>
+                                        {offices?.map(o => (
+                                            <option key={o.id} value={o.id}>{o.name}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                                    </div>
+                                </div>
+                                {/* FIX 1: tag <a> pembuka yang hilang */}
+                                <a
+                                    href={route('admin.export-presensi', { bulan: month, office_id: officeId || undefined })}
+                                    className="px-5 py-2.5 rounded-2xl text-sm font-bold shadow-lg shadow-emerald-500/25 transition-all duration-300 flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                    Export Excel
+                                </a>
+                            </div>
+                        ) : (
+                            <button
+                                disabled
+                                title="Pilih mode Bulanan untuk export"
+                                className="px-5 py-2.5 rounded-2xl text-sm font-bold shadow-sm flex items-center gap-2 bg-slate-100 text-slate-400 cursor-not-allowed"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                Export Excel
+                            </button>
+                        )}
+                        <div className="flex items-center gap-1 bg-white rounded-2xl border border-slate-200 p-1.5 shadow-sm">
+                            <button
+                                onClick={() => setActiveTab('daily')}
+                                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 ${activeTab === 'daily'
                                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
                                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                            }`}
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            Harian
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('monthly')}
-                            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
-                                activeTab === 'monthly'
+                                    }`}
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                Harian
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('monthly')}
+                                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 ${activeTab === 'monthly'
                                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
                                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                            }`}
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                            Bulanan
-                        </button>
+                                    }`}
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                                Bulanan
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -165,9 +220,8 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    {/* Office Filter Inside Bar */}
                                     <div className="relative group mr-2">
-                                        <select 
+                                        <select
                                             value={officeId}
                                             onChange={(e) => handleOfficeChange(e.target.value)}
                                             className="pl-10 pr-8 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-100 transition-all cursor-pointer appearance-none min-w-[160px]"
@@ -178,10 +232,9 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                                             ))}
                                         </select>
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                                         </div>
                                     </div>
-
                                     <input
                                         type="date"
                                         value={date}
@@ -204,7 +257,7 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex items-center gap-4 group hover:border-emerald-200 transition-all">
                                 <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
                                 </div>
                                 <div>
                                     <p className="text-2xl font-black text-slate-900 leading-none">{dailyStats.hadir}</p>
@@ -213,7 +266,7 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                             </div>
                             <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex items-center gap-4 group hover:border-orange-200 transition-all">
                                 <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-all">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 </div>
                                 <div>
                                     <p className="text-2xl font-black text-slate-900 leading-none">{dailyStats.terlambat}</p>
@@ -222,7 +275,7 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                             </div>
                             <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex items-center gap-4 group hover:border-amber-200 transition-all">
                                 <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-all">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                 </div>
                                 <div>
                                     <p className="text-2xl font-black text-slate-900 leading-none">{dailyStats.izin}</p>
@@ -231,83 +284,13 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                             </div>
                             <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex items-center gap-4 group hover:border-slate-300 transition-all">
                                 <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-slate-600 group-hover:text-white transition-all">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                                 </div>
                                 <div>
                                     <p className="text-2xl font-black text-slate-900 leading-none">{dailyStats.alpha}</p>
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Alpha</p>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Daily Attendance Table */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-slate-50/80">
-                                            <th className="text-left px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pegawai</th>
-                                            <th className="text-center px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                            <th className="text-center px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Jam Masuk</th>
-                                            <th className="text-left px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Keterangan</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {dailyData?.map((member) => (
-                                            <tr key={member.id} className="hover:bg-slate-50/50 transition-colors group">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center text-slate-600 font-bold text-sm group-hover:from-blue-500 group-hover:to-indigo-600 group-hover:text-white transition-all">
-                                                            {member.name?.charAt(0).toUpperCase()}
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-sm font-bold text-slate-900">{member.name}</p>
-                                                            <p className="text-xs text-slate-400">{member.email}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-4 text-center">
-                                                    <span className={`inline-flex px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${statusConfig[member.status]?.color}`}>
-                                                        {statusConfig[member.status]?.label}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-4 text-center">
-                                                    {member.clock_in_time ? (
-                                                        <div className="flex items-center justify-center gap-2">
-                                                            <span className="text-sm font-black text-slate-900 font-mono">
-                                                                {formatTime(member.clock_in_time)}
-                                                            </span>
-                                                            {member.is_late && (
-                                                                <span className="inline-flex px-2 py-0.5 bg-orange-100 text-orange-600 rounded-md text-[9px] font-black uppercase tracking-wider">
-                                                                    Terlambat
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-slate-300 text-sm">—</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    {member.leave_reason && (
-                                                        <p className="text-sm text-slate-500 italic max-w-xs truncate">"{member.leave_reason}"</p>
-                                                    )}
-                                                    {member.status === 'alpha' && (
-                                                        <p className="text-sm text-slate-400 italic">Tidak hadir, tidak ada izin</p>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {(!dailyData || dailyData.length === 0) && (
-                                <div className="p-20 text-center text-slate-300">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                                    </div>
-                                    <p className="font-black uppercase tracking-widest text-sm">Belum ada pegawai</p>
-                                </div>
-                            )}
                         </div>
                     </div>
                 )}
@@ -348,9 +331,8 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    {/* Office Filter Inside Bar */}
                                     <div className="relative group mr-2">
-                                        <select 
+                                        <select
                                             value={officeId}
                                             onChange={(e) => handleOfficeChange(e.target.value)}
                                             className="pl-10 pr-8 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:ring-4 focus:ring-blue-100 transition-all cursor-pointer appearance-none min-w-[160px]"
@@ -361,10 +343,9 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                                             ))}
                                         </select>
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                                         </div>
                                     </div>
-
                                     <input
                                         type="month"
                                         value={month}
@@ -395,125 +376,156 @@ export default function AdminSchedule({ dailyData, monthlyData, selectedDate, se
                             </div>
                         </div>
 
-                        {/* Monthly Recap Table */}
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-slate-50/80">
-                                            <th className="text-left px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pegawai</th>
-                                            <th className="text-center px-4 py-4 text-[10px] font-black text-emerald-500 uppercase tracking-widest">
-                                                <div className="flex flex-col items-center gap-1.5">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                    <span>Hadir</span>
-                                                </div>
-                                            </th>
-                                            <th className="text-center px-4 py-4 text-[10px] font-black text-orange-500 uppercase tracking-widest">
-                                                <div className="flex flex-col items-center gap-1.5">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                                    <span>Terlambat</span>
-                                                </div>
-                                            </th>
-                                            <th className="text-center px-4 py-4 text-[10px] font-black text-amber-500 uppercase tracking-widest">
-                                                <div className="flex flex-col items-center gap-1.5">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                                    <span>Izin</span>
-                                                </div>
-                                            </th>
-                                            <th className="text-center px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                                <div className="flex flex-col items-center gap-1.5">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                    <span>Alpha</span>
-                                                </div>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {monthlyData?.map((member) => {
-                                            const total = member.hadir + member.izin + member.alpha;
-                                            const hadirPercentage = total > 0 ? Math.round((member.hadir / total) * 100) : 0;
-
-                                            return (
-                                                <tr key={member.id} className="hover:bg-slate-50/50 transition-colors group">
-                                                    <td className="px-6 py-5">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center text-slate-600 font-bold text-sm group-hover:from-blue-500 group-hover:to-indigo-600 group-hover:text-white transition-all">
-                                                                {member.name?.charAt(0).toUpperCase()}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-bold text-slate-900 truncate">{member.name}</p>
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[120px]">
-                                                                        <div
-                                                                            className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-500"
-                                                                            style={{ width: `${hadirPercentage}%` }}
-                                                                        ></div>
-                                                                    </div>
-                                                                    <span className="text-[10px] font-bold text-slate-400">{hadirPercentage}%</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-5 text-center">
-                                                        <span className="inline-flex items-center justify-center w-10 h-10 bg-emerald-50 text-emerald-700 rounded-xl font-black text-base">
-                                                            {member.hadir}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-5 text-center">
-                                                        <span className={`inline-flex items-center justify-center w-10 h-10 rounded-xl font-black text-base ${
-                                                            member.terlambat > 0
-                                                                ? 'bg-orange-50 text-orange-600'
-                                                                : 'bg-slate-50 text-slate-300'
-                                                        }`}>
-                                                            {member.terlambat}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-5 text-center">
-                                                        <span className={`inline-flex items-center justify-center w-10 h-10 rounded-xl font-black text-base ${
-                                                            member.izin > 0
-                                                                ? 'bg-amber-50 text-amber-600'
-                                                                : 'bg-slate-50 text-slate-300'
-                                                        }`}>
-                                                            {member.izin}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-5 text-center">
-                                                        <span className={`inline-flex items-center justify-center w-10 h-10 rounded-xl font-black text-base ${
-                                                            member.alpha > 0
-                                                                ? 'bg-red-50 text-red-500'
-                                                                : 'bg-slate-50 text-slate-300'
-                                                        }`}>
-                                                            {member.alpha}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {(!monthlyData || monthlyData.length === 0) && (
-                                <div className="p-20 text-center text-slate-300 flex flex-col items-center">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
-                                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                                    </div>
-                                    <p className="font-black uppercase tracking-widest text-sm text-slate-300">Belum ada data pegawai</p>
-                                </div>
-                            )}
-                        </div>
-
                         {/* Note */}
                         <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
                             <span className="text-blue-500 mt-0.5">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </span>
                             <p className="text-sm text-blue-700 font-medium">
-                                <span className="font-bold">Catatan:</span> Karyawan yang terlambat tetap dihitung sebagai <strong>Hadir</strong>. 
+                                <span className="font-bold">Catatan:</span> Karyawan yang terlambat tetap dihitung sebagai <strong>Hadir</strong>.
                                 Kolom "Terlambat" menunjukkan berapa kali mereka datang melebihi jam masuk kantor.
                             </p>
                         </div>
                     </div>
                 )}
+
+                {/* ========== SECTION RIWAYAT PRESENSI ========== */}
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-100/30 overflow-hidden mt-8">
+                    <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h3 className="text-xl font-black text-slate-900">Riwayat Presensi</h3>
+                            <p className="text-sm font-medium text-slate-500 mt-1">
+                                {activeTab === 'daily' ? `Tanggal: ${formatDate(date)}` : `Bulan: ${formatMonthLabel(month)}`}
+                            </p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <select
+                                value={filterName}
+                                onChange={(e) => setFilterName(e.target.value)}
+                                className="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none pr-10 cursor-pointer"
+                                style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                            >
+                                <option value="Semua Karyawan">Semua Karyawan</option>
+                                {uniqueMembers.map(name => (
+                                    <option key={name} value={name}>{name}</option>
+                                ))}
+                            </select>
+                            {activeTab === 'daily' && (
+                                <select
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value)}
+                                    className="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none pr-10 cursor-pointer"
+                                    style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                                >
+                                    <option value="Semua Status">Semua Status</option>
+                                    <option value="Hadir">Hadir</option>
+                                    <option value="Terlambat">Terlambat</option>
+                                    <option value="Izin">Izin</option>
+                                    <option value="Alpha">Alpha</option>
+                                    <option value="Libur">Libur</option>
+                                </select>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="bg-slate-50/50">
+                                    <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Nama Karyawan</th>
+                                    {activeTab === 'daily' ? (
+                                        <>
+                                            <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Status</th>
+                                            <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Jam Masuk</th>
+                                            <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Jam Keluar</th>
+                                            <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Durasi Kerja</th>
+                                            <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Tugas Dikerjakan</th>
+                                            <th className="text-left px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Keterangan</th>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Total Hadir</th>
+                                            <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Total Terlambat</th>
+                                            <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Total Izin</th>
+                                            <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Total Alpha</th>
+                                            <th className="text-center px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Total Libur</th>
+                                        </>
+                                    )}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {filteredRiwayat.length > 0 ? (
+                                    filteredRiwayat.map((member) => {
+                                        if (activeTab === 'daily') {
+                                            const isPresent = member.status === 'hadir';
+                                            return (
+                                                <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
+                                                    <td className="px-6 py-5">
+                                                        <p className="text-sm font-bold text-slate-900">{member.name}</p>
+                                                        <p className="text-xs text-slate-400">{member.email}</p>
+                                                    </td>
+                                                    <td className="px-4 py-5 text-center">
+                                                        {member.status === 'hadir' && !member.is_late && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-100 text-emerald-700">Hadir</span>}
+                                                        {member.status === 'hadir' && member.is_late && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-amber-100 text-amber-700">Terlambat</span>}
+                                                        {member.status === 'izin' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-sky-100 text-sky-700">Izin</span>}
+                                                        {member.status === 'alpha' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-red-100 text-red-700">Alpha</span>}
+                                                        {member.status === 'libur' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 text-slate-700">Libur</span>}
+                                                    </td>
+                                                    <td className="px-4 py-5 text-center">
+                                                        {isPresent ? <span className="text-sm font-bold text-slate-700 font-mono">{member.clock_in_time ? formatTime(member.clock_in_time) : "—"}</span> : <span className="text-sm text-slate-300">—</span>}
+                                                    </td>
+                                                    <td className="px-4 py-5 text-center">
+                                                        {isPresent ? <span className="text-sm font-bold text-slate-700 font-mono">{member.clock_out_time ? formatTime(member.clock_out_time) : "—"}</span> : <span className="text-sm text-slate-300">—</span>}
+                                                    </td>
+                                                    <td className="px-4 py-5 text-center">
+                                                        {isPresent && member.duration_minutes ? <span className="text-sm font-bold text-slate-700 font-mono">{formatDuration(member.duration_minutes)}</span> : <span className="text-sm text-slate-300">—</span>}
+                                                    </td>
+                                                    <td className="px-4 py-5 text-center">
+                                                        {isPresent && member.work_report ? <p className="text-sm text-slate-600 truncate max-w-[200px] mx-auto" title={member.work_report}>{member.work_report}</p> : <span className="text-sm text-slate-300">—</span>}
+                                                    </td>
+                                                    <td className="px-4 py-5">
+                                                        {member.status === 'hadir' && !member.is_late && <span className="text-sm text-slate-300">—</span>}
+                                                        {member.status === 'hadir' && member.is_late && <span className="text-sm text-orange-500 font-medium italic">Terlambat</span>}
+                                                        {member.status === 'izin' && <span className="text-sm text-slate-500 italic">"{member.leave_reason || "—"}"</span>}
+                                                        {(member.status === 'alpha' || member.status === 'libur') && <span className="text-sm text-slate-300">—</span>}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        } else {
+                                            return (
+                                                <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
+                                                    <td className="px-6 py-5">
+                                                        <p className="text-sm font-bold text-slate-900">{member.name}</p>
+                                                        <p className="text-xs text-slate-400">{member.email}</p>
+                                                    </td>
+                                                    <td className="px-4 py-5 text-center"><span className="text-sm font-black text-slate-700">{member.hadir || 0}</span></td>
+                                                    <td className="px-4 py-5 text-center"><span className="text-sm font-black text-slate-700">{member.terlambat || 0}</span></td>
+                                                    <td className="px-4 py-5 text-center"><span className="text-sm font-black text-slate-700">{member.izin || 0}</span></td>
+                                                    <td className="px-4 py-5 text-center"><span className="text-sm font-black text-slate-700">{member.alpha || 0}</span></td>
+                                                    <td className="px-4 py-5 text-center"><span className="text-sm font-black text-slate-700">{member.libur || 0}</span></td>
+                                                </tr>
+                                            );
+                                        }
+                                    })
+                                ) : (
+                                    <tr>
+                                        <td colSpan={activeTab === 'daily' ? 7 : 6} className="px-6 py-16 text-center">
+                                            <div className="flex flex-col items-center justify-center text-slate-400">
+                                                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 text-slate-300">
+                                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                                                    </svg>
+                                                </div>
+                                                <p className="font-black uppercase tracking-[0.2em] text-[10px] text-slate-300">Tidak ada data untuk filter ini</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {/* FIX 2: </div> penutup untuk <div className="space-y-6 animate-slide-up pb-12"> */}
             </div>
         </AuthenticatedLayout>
     );
