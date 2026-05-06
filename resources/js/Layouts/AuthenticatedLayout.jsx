@@ -89,37 +89,46 @@ export default function AuthenticatedLayout({ header, children }) {
             )}
 
             {/* Sidebar */}
-            <aside className={`fixed top-0 left-0 z-50 h-full w-72 bg-white/90 backdrop-blur-xl border-r border-dark-100 transform transition-transform duration-300 ease-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed top-0 left-0 z-50 h-full w-72 bg-white/70 backdrop-blur-2xl border-r border-white/40 transform transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full shadow-none'} shadow-[20px_0_50px_-20px_rgba(0,0,0,0.05)]`}>
                 <div className="flex flex-col h-full">
                     {/* Logo */}
-                    <div className="px-6 py-6 border-b border-dark-100">
-                        <Link href={route('dashboard')} className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                                <span className="text-white font-bold text-lg">L</span>
+                    <div className="px-8 py-10">
+                        <Link href={route('dashboard')} className="flex items-center gap-4 group">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/30 group-hover:rotate-6 group-hover:scale-110 transition-all duration-500">
+                                <span className="text-white font-black text-xl tracking-tighter">L</span>
                             </div>
                             <div>
-                                <h1 className="text-lg font-bold text-dark-900 tracking-tight">Locattend</h1>
-                                <p className="text-xs text-dark-400">GeoTrack HR System</p>
+                                <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1 group-hover:text-blue-600 transition-colors">Locattend</h1>
+                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">GeoTrack HR</p>
                             </div>
                         </Link>
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+                    <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto custom-scrollbar">
+                        <div className="px-4 mb-4">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Main Menu</p>
+                        </div>
                         {navItems.map((item) => {
                             const isActive = route().current(item.href);
                             return (
                                 <Link
                                     key={item.href}
                                     href={route(item.href)}
-                                    className={`${isActive ? 'sidebar-link-active' : 'sidebar-link'} relative`}
+                                    className={`${isActive 
+                                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30' 
+                                        : 'text-slate-500 hover:bg-white hover:text-blue-600 hover:shadow-sm'
+                                    } group flex items-center gap-3.5 px-5 py-3.5 rounded-2xl transition-all duration-300 font-bold text-sm relative overflow-hidden`}
                                 >
-                                    <span className={`transition-colors ${isActive ? 'text-white' : 'text-blue-500'}`}>{item.icon}</span>
+                                    <span className={`transition-all duration-300 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-blue-600 group-hover:scale-110'}`}>{item.icon}</span>
                                     <span className="flex-1">{item.name}</span>
                                     {item.badge && pendingLeavesCount > 0 && (
-                                        <span className="ml-auto px-2 py-0.5 text-[10px] font-black bg-rose-500 text-white rounded-full min-w-[20px] text-center animate-pulse shadow-lg shadow-rose-500/30">
+                                        <span className="ml-auto px-2.5 py-0.5 text-[9px] font-black bg-rose-500 text-white rounded-full min-w-[22px] text-center animate-pulse shadow-lg shadow-rose-500/40">
                                             {pendingLeavesCount}
                                         </span>
+                                    )}
+                                    {isActive && (
+                                        <span className="absolute left-0 top-0 bottom-0 w-1 bg-white/30 rounded-r-full"></span>
                                     )}
                                 </Link>
                             );
@@ -127,26 +136,29 @@ export default function AuthenticatedLayout({ header, children }) {
                     </nav>
 
                     {/* User Profile Card */}
-                    <div className="p-4 border-t border-dark-100">
-                        <div className="glass-card p-4">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-bold">
-                                    {user.name?.charAt(0)?.toUpperCase()}
+                    <div className="p-6">
+                        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-5 rounded-[2rem] shadow-2xl shadow-blue-600/20 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-white opacity-10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700"></div>
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-4 mb-5">
+                                    <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white font-black text-lg border border-white/20 shadow-inner">
+                                        {user.name?.charAt(0)?.toUpperCase()}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-black text-white truncate">{user.name}</p>
+                                        <span className={`inline-block px-2.5 py-0.5 mt-1 text-[9px] font-black uppercase tracking-widest rounded-lg ${roleBadgeColor[role]} border-none shadow-sm`}>
+                                            {roleLabel[role]}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-dark-900 truncate">{user.name}</p>
-                                    <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${roleBadgeColor[role]}`}>
-                                        {roleLabel[role]}
-                                    </span>
+                                <div className="flex gap-2">
+                                    <Link href={route('profile.edit')} className="flex-1 text-center text-[10px] font-black uppercase tracking-widest py-3 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all border border-white/10">
+                                        Profil
+                                    </Link>
+                                    <Link href={route('logout')} method="post" as="button" className="flex-1 text-center text-[10px] font-black uppercase tracking-widest py-3 rounded-xl bg-rose-500/20 text-white hover:bg-rose-500 transition-all border border-white/10">
+                                        Logout
+                                    </Link>
                                 </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <Link href={route('profile.edit')} className="flex-1 text-center text-xs py-2 rounded-lg bg-dark-50 text-dark-600 hover:bg-dark-100 transition-colors font-medium">
-                                    Profil
-                                </Link>
-                                <Link href={route('logout')} method="post" as="button" className="flex-1 text-center text-xs py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors font-medium">
-                                    Logout
-                                </Link>
                             </div>
                         </div>
                     </div>
