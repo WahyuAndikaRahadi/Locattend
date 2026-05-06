@@ -52,9 +52,9 @@ export default function AuthenticatedLayout({ header, children }) {
     };
 
     const roleBadgeColor = {
-        admin: 'bg-red-100 text-red-700',
-        supervisor: 'bg-amber-100 text-amber-700',
-        karyawan: 'bg-primary-100 text-primary-700',
+        admin: 'bg-rose-500/20 text-white border border-rose-400/30',
+        supervisor: 'bg-amber-500/20 text-white border border-amber-400/30',
+        karyawan: 'bg-blue-400/20 text-white border border-blue-300/30',
     };
 
     return (
@@ -137,25 +137,29 @@ export default function AuthenticatedLayout({ header, children }) {
 
                     {/* User Profile Card */}
                     <div className="p-6">
-                        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-5 rounded-[2rem] shadow-2xl shadow-blue-600/20 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-white opacity-10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700"></div>
+                        <div className="bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 p-5 rounded-[2.2rem] shadow-2xl shadow-blue-900/30 relative overflow-hidden group">
+                            {/* Decorative elements */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-[0.08] rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000"></div>
+                            
                             <div className="relative z-10">
-                                <div className="flex items-center gap-4 mb-5">
-                                    <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white font-black text-lg border border-white/20 shadow-inner">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center text-white font-black text-lg border border-white/30 shadow-inner group-hover:scale-110 transition-transform duration-500">
                                         {user.name?.charAt(0)?.toUpperCase()}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-black text-white truncate">{user.name}</p>
-                                        <span className={`inline-block px-2.5 py-0.5 mt-1 text-[9px] font-black uppercase tracking-widest rounded-lg ${roleBadgeColor[role]} border-none shadow-sm`}>
+                                        <p className="text-sm font-black text-white truncate tracking-tight">{user.name}</p>
+                                        <span className={`inline-flex items-center px-2 py-0.5 mt-1 text-[8px] font-black uppercase tracking-[0.2em] rounded-lg ${roleBadgeColor[role]}`}>
                                             {roleLabel[role]}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <Link href={route('profile.edit')} className="flex-1 text-center text-[10px] font-black uppercase tracking-widest py-3 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all border border-white/10">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Link href={route('profile.edit')} className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/10 text-white text-[9px] font-black uppercase tracking-widest hover:bg-white/20 transition-all border border-white/10 group/btn">
+                                        <svg className="w-3 h-3 opacity-60 group-hover/btn:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                                         Profil
                                     </Link>
-                                    <Link href={route('logout')} method="post" as="button" className="flex-1 text-center text-[10px] font-black uppercase tracking-widest py-3 rounded-xl bg-rose-500/20 text-white hover:bg-rose-500 transition-all border border-white/10">
+                                    <Link href={route('logout')} method="post" as="button" className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/10 text-white text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 transition-all border border-white/10 group/out">
+                                        <svg className="w-3 h-3 opacity-60 group-hover/out:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg>
                                         Logout
                                     </Link>
                                 </div>

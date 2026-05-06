@@ -104,11 +104,11 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
         <AuthenticatedLayout header="Presensi Harian">
             <Head title="Presensi" />
 
-            <div className="max-w-6xl mx-auto px-4 py-8 space-y-10">
+            <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
                 {/* Hero Status Section */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 rounded-[3.5rem] p-8 sm:p-14 shadow-2xl shadow-blue-600/20 group">
+                <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 rounded-[3.5rem] p-8 sm:p-14 shadow-2xl shadow-blue-600/20 group">
                     <div className="absolute top-0 right-0 w-96 h-96 bg-white opacity-[0.08] rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-1000 group-hover:scale-150"></div>
-                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-white opacity-[0.05] rounded-full blur-3xl -ml-20 -mb-20 transition-transform duration-1000 group-hover:-translate-y-10"></div>
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-400 opacity-[0.05] rounded-full blur-3xl -ml-20 -mb-20 transition-transform duration-1000 group-hover:-translate-y-10"></div>
                     
                     <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
                         <div className="text-center lg:text-left space-y-6 max-w-xl animate-slide-down">
