@@ -1,11 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function SupervisorTeam({ teamMembers, attendanceChart, statusDistribution }) {
-    const { notifications } = usePage().props;
-    const pendingCount = notifications?.pendingLeavesCount || 0;
-
     const statusStyles = {
         hadir: { text: 'Hadir', color: 'bg-emerald-100 text-emerald-700' },
         izin: { text: 'Izin', color: 'bg-amber-100 text-amber-700' },
@@ -17,30 +14,6 @@ export default function SupervisorTeam({ teamMembers, attendanceChart, statusDis
             <Head title="Dashboard Tim" />
 
             <div className="space-y-6 animate-slide-up">
-                {/* Pending Leaves Alert Banner */}
-                {pendingCount > 0 && (
-                    <Link
-                        href={route('supervisor.leaves.index')}
-                        className="block bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group"
-                    >
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center animate-pulse">
-                                    <span className="text-xl">📝</span>
-                                </div>
-                                <div>
-                                    <p className="font-bold text-amber-900">
-                                        {pendingCount} pengajuan izin menunggu persetujuan
-                                    </p>
-                                    <p className="text-sm text-amber-600">Klik untuk meninjau dan memproses</p>
-                                </div>
-                            </div>
-                            <svg className="w-5 h-5 text-amber-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                        </div>
-                    </Link>
-                )}
 
                 {/* Charts Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

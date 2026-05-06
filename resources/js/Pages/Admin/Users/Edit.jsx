@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link } from '@inertiajs/react';
 
-export default function AdminUsersEdit({ user, currentRole, roles, offices, supervisors }) {
+export default function AdminUsersEdit({ user, currentRole, roles, offices }) {
     const { data, setData, put, processing, errors } = useForm({
         name: user.name || '',
         email: user.email || '',
@@ -9,7 +9,6 @@ export default function AdminUsersEdit({ user, currentRole, roles, offices, supe
         password_confirmation: '',
         role: currentRole || 'karyawan',
         office_id: user.office_id || '',
-        supervisor_id: user.supervisor_id || '',
     });
 
     const handleSubmit = (e) => {
@@ -113,38 +112,20 @@ export default function AdminUsersEdit({ user, currentRole, roles, offices, supe
                                     {errors.role && <p className="text-rose-500 text-xs font-bold mt-2 ml-1">⚠️ {errors.role}</p>}
                                 </div>
 
-                                <div>
-                                    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Penempatan Kantor</label>
-                                    <select 
-                                        value={data.office_id} 
-                                        onChange={(e) => {
-                                            const newOfficeId = e.target.value;
-                                            setData((prev) => ({
-                                                ...prev,
-                                                office_id: newOfficeId,
-                                                supervisor_id: '' // reset supervisor when office changes
-                                            }));
-                                        }} 
-                                        className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all font-bold text-slate-800 shadow-inner appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.2em] bg-[right_1.25rem_center] bg-no-repeat"
-                                    >
-                                        <option value="">-- Tidak Memilih Kantor --</option>
-                                        {offices?.map((office) => (
-                                            <option key={office.id} value={office.id}>{office.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {data.role === 'karyawan' && (
-                                    <div className="md:col-span-2">
-                                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Supervisor Pendamping</label>
+                                {data.role !== 'admin' && (
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">
+                                            Penempatan Kantor
+                                        </label>
                                         <select 
-                                            value={data.supervisor_id} 
-                                            onChange={(e) => setData('supervisor_id', e.target.value)} 
+                                            value={data.office_id} 
+                                            onChange={(e) => setData('office_id', e.target.value)} 
+                                            required={data.role !== 'admin'}
                                             className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all font-bold text-slate-800 shadow-inner appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.2em] bg-[right_1.25rem_center] bg-no-repeat"
                                         >
-                                            <option value="">-- Pilih Supervisor (Opsional) --</option>
-                                            {(data.office_id ? supervisors?.filter(sup => sup.office_id == data.office_id) : supervisors)?.map((sup) => (
-                                                <option key={sup.id} value={sup.id}>{sup.name}</option>
+                                            <option value="">-- Pilih Kantor --</option>
+                                            {offices?.map((office) => (
+                                                <option key={office.id} value={office.id}>{office.name}</option>
                                             ))}
                                         </select>
                                     </div>

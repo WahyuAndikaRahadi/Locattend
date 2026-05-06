@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link } from '@inertiajs/react';
 
-export default function AdminUsersCreate({ roles, offices, supervisors }) {
+export default function AdminUsersCreate({ roles, offices }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
@@ -9,7 +9,6 @@ export default function AdminUsersCreate({ roles, offices, supervisors }) {
         password_confirmation: '',
         role: 'karyawan',
         office_id: '',
-        supervisor_id: '',
     });
 
     const handleSubmit = (e) => {
@@ -108,42 +107,23 @@ export default function AdminUsersCreate({ roles, offices, supervisors }) {
                                     {errors.role && <p className="text-rose-500 text-xs font-bold mt-2 ml-1">⚠️ {errors.role}</p>}
                                 </div>
 
-                                <div>
-                                    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Kantor Penempatan</label>
-                                    <select 
-                                        value={data.office_id} 
-                                        onChange={(e) => {
-                                            const newOfficeId = e.target.value;
-                                            setData((prev) => ({
-                                                ...prev,
-                                                office_id: newOfficeId,
-                                                supervisor_id: '' // reset supervisor when office changes
-                                            }));
-                                        }} 
-                                        className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:bg-white focus:ring-4 focus:ring-primary-100 transition-all font-bold text-slate-800 shadow-inner appearance-none"
-                                    >
-                                        <option value="">-- Tidak Memilih Kantor --</option>
-                                        {offices?.map((office) => (
-                                            <option key={office.id} value={office.id}>{office.name}</option>
-                                        ))}
-                                    </select>
-                                    {errors.office_id && <p className="text-rose-500 text-xs font-bold mt-2 ml-1">⚠️ {errors.office_id}</p>}
-                                </div>
-
-                                {data.role === 'karyawan' && (
-                                    <div className="md:col-span-2">
-                                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Supervisor Pendamping</label>
+                                {data.role !== 'admin' && (
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">
+                                            Kantor Penempatan
+                                        </label>
                                         <select 
-                                            value={data.supervisor_id} 
-                                            onChange={(e) => setData('supervisor_id', e.target.value)} 
+                                            value={data.office_id} 
+                                            onChange={(e) => setData('office_id', e.target.value)} 
+                                            required={data.role !== 'admin'}
                                             className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:bg-white focus:ring-4 focus:ring-primary-100 transition-all font-bold text-slate-800 shadow-inner appearance-none"
                                         >
-                                            <option value="">-- Pilih Supervisor (Opsional) --</option>
-                                            {(data.office_id ? supervisors?.filter(sup => sup.office_id == data.office_id) : supervisors)?.map((sup) => (
-                                                <option key={sup.id} value={sup.id}>{sup.name}</option>
+                                            <option value="">-- Pilih Kantor --</option>
+                                            {offices?.map((office) => (
+                                                <option key={office.id} value={office.id}>{office.name}</option>
                                             ))}
                                         </select>
-                                        {errors.supervisor_id && <p className="text-rose-500 text-xs font-bold mt-2 ml-1">⚠️ {errors.supervisor_id}</p>}
+                                        {errors.office_id && <p className="text-rose-500 text-xs font-bold mt-2 ml-1">⚠️ {errors.office_id}</p>}
                                     </div>
                                 )}
                             </div>

@@ -17,9 +17,9 @@ class SupervisorController extends Controller
     public function team(Request $request)
     {
         $user = $request->user();
-        $subordinateIds = $user->subordinates()->pluck('id');
+        $subordinateIds = User::role('karyawan')->where('office_id', $user->office_id)->pluck('id');
 
-        $teamMembers = $user->subordinates()
+        $teamMembers = User::role('karyawan')->where('office_id', $user->office_id)
             ->with('office')
             ->select('id', 'name', 'email', 'office_id')
             ->get()
@@ -52,8 +52,6 @@ class SupervisorController extends Controller
         $last7Days = collect();
         $totalTeam = $subordinateIds->count();
 
-        $totalTeam = $subordinateIds->count();
-
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $dayAttendances = Attendance::whereIn('user_id', $subordinateIds)
@@ -68,7 +66,7 @@ class SupervisorController extends Controller
                 ->count();
 
             // Calculate alpha only for those supposed to work today
-            $expectedToWorkCount = User::whereIn('id', $subordinateIds)
+            $expectedToWorkCount = User::role('karyawan')->whereIn('id', $subordinateIds)
                 ->get()
                 ->filter(function ($u) use ($date) {
                     return !$u->office || $u->office->isWorkingDay($date);
@@ -285,7 +283,7 @@ class SupervisorController extends Controller
     public function leaves(Request $request)
     {
         $user = $request->user();
-        $subordinateIds = $user->subordinates()->pluck('id');
+        $subordinateIds = User::role('karyawan')->where('office_id', $user->office_id)->pluck('id');
 
         $pendingLeaves = Leave::whereIn('user_id', $subordinateIds)
             ->where('status', 'pending')
@@ -313,12 +311,9 @@ class SupervisorController extends Controller
     {
         $user = $request->user();
 
-        // Verify supervisor owns the team member (Skip if Admin)
+        // Verify only Admin can approve
         if (!$user->hasRole('admin')) {
-            $subordinateIds = $user->subordinates()->pluck('id');
-            if (!$subordinateIds->contains($leave->user_id)) {
-                abort(403, 'Anda tidak memiliki akses untuk menyetujui izin ini.');
-            }
+             abort(403, 'Hanya Admin yang dapat menyetujui izin ini.');
         }
 
         if (!$leave->isPending()) {
@@ -340,12 +335,9 @@ class SupervisorController extends Controller
     {
         $user = $request->user();
 
-        // Verify supervisor owns the team member (Skip if Admin)
+        // Verify only Admin can reject
         if (!$user->hasRole('admin')) {
-            $subordinateIds = $user->subordinates()->pluck('id');
-            if (!$subordinateIds->contains($leave->user_id)) {
-                abort(403, 'Anda tidak memiliki akses untuk menolak izin ini.');
-            }
+             abort(403, 'Hanya Admin yang dapat menolak izin ini.');
         }
 
         if (!$leave->isPending()) {

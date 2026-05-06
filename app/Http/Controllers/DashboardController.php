@@ -90,7 +90,7 @@ class DashboardController extends Controller
 
         // Supervisor-specific: team stats
         if ($user->hasRole('supervisor')) {
-            $teamIds = $user->subordinates()->pluck('id');
+            $teamIds = User::role('karyawan')->where('office_id', $user->office_id)->pluck('id');
 
             $data['teamCount'] = $teamIds->count();
             $data['teamPresentToday'] = Attendance::whereIn('user_id', $teamIds)

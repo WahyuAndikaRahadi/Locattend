@@ -23,7 +23,6 @@ const navigation = {
         { name: 'Absensi', href: 'attendance.index', icon: Icons.Absensi },
         { name: 'Tim Saya', href: 'supervisor.team', icon: Icons.Tim },
         { name: 'Jadwal Tim', href: 'supervisor.schedule', icon: Icons.Jadwal },
-        { name: 'Persetujuan Izin', href: 'supervisor.leaves.index', icon: Icons.Izin, badge: true },
         { name: 'Izin/Cuti', href: 'leaves.index', icon: Icons.Izin },
     ],
     admin: [

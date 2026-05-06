@@ -21,7 +21,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $users = User::with(['roles', 'office:id,name', 'supervisor:id,name'])
+        $users = User::with(['roles', 'office:id,name'])
             ->when($request->search, function ($query, $search) {
                 $query->where(function($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -34,9 +34,7 @@ class UserController extends Controller
             ->when($request->office_id, function ($query, $officeId) {
                 $query->where('office_id', $officeId);
             })
-            ->when($request->supervisor_id, function ($query, $supervisorId) {
-                $query->where('supervisor_id', $supervisorId);
-            })
+
             ->orderByDesc('created_at')
             ->paginate(10)
             ->withQueryString();
@@ -55,7 +53,6 @@ class UserController extends Controller
             'stats' => $stats,
             'offices' => Office::all(['id', 'name']),
             'roles' => Role::all(['id', 'name']),
-            'supervisors' => User::role('supervisor')->get(['id', 'name']),
         ]);
     }
 
@@ -67,7 +64,6 @@ class UserController extends Controller
         return Inertia::render('Admin/Users/Create', [
             'roles' => Role::all()->pluck('name'),
             'offices' => Office::all(['id', 'name']),
-            'supervisors' => User::role('supervisor')->get(['id', 'name', 'office_id']),
         ]);
     }
 
@@ -81,22 +77,14 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => 'required|string|exists:roles,name',
-            'office_id' => 'nullable|exists:offices,id',
-            'supervisor_id' => 'nullable|exists:users,id',
+            'office_id' => 'required_unless:role,admin|nullable|exists:offices,id',
         ]);
-
-        $supervisor_id = $request->supervisor_id;
-        // Auto-clear manager if role is admin or supervisor
-        if (in_array($request->role, ['admin', 'supervisor'])) {
-            $supervisor_id = null;
-        }
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'office_id' => $request->office_id,
-            'supervisor_id' => $supervisor_id,
             'email_verified_at' => now(),
         ]);
 
@@ -118,7 +106,6 @@ class UserController extends Controller
             'currentRole' => $user->roles->first()?->name,
             'roles' => Role::all()->pluck('name'),
             'offices' => Office::all(['id', 'name']),
-            'supervisors' => User::role('supervisor')->where('id', '!=', $user->id)->get(['id', 'name', 'office_id']),
         ]);
     }
 
@@ -132,21 +119,13 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'role' => 'required|string|exists:roles,name',
-            'office_id' => 'nullable|exists:offices,id',
-            'supervisor_id' => 'nullable|exists:users,id',
+            'office_id' => 'required_unless:role,admin|nullable|exists:offices,id',
         ]);
-
-        $supervisor_id = $request->supervisor_id;
-        // Auto-clear manager if role is admin or supervisor
-        if (in_array($request->role, ['admin', 'supervisor'])) {
-            $supervisor_id = null;
-        }
 
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
             'office_id' => $request->office_id,
-            'supervisor_id' => $supervisor_id,
         ]);
 
         if ($request->filled('password')) {

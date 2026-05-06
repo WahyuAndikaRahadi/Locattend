@@ -120,12 +120,12 @@ function KaryawanDashboard({ todayAttendance, pendingLeavesCount, office }) {
     );
 }
 
-function SupervisorDashboard({ todayAttendance, pendingLeavesCount, teamCount, teamPresentToday, teamPendingLeaves, office }) {
+function SupervisorDashboard({ todayAttendance, pendingLeavesCount, teamCount, teamPresentToday, office }) {
     return (
         <div className="space-y-8 animate-slide-up">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                  <StatCard 
-                    title="Total Tim" 
+                    title="Total Karyawan" 
                     value={teamCount || 0}
                     colorClass="bg-gradient-to-br from-blue-500 to-blue-600"
                     shadowColor="shadow-blue-500/30"
@@ -139,15 +139,8 @@ function SupervisorDashboard({ todayAttendance, pendingLeavesCount, teamCount, t
                     icon={<svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
                 />
                 <StatCard 
-                    title="Izin Pending" 
-                    value={teamPendingLeaves || 0}
-                    colorClass="bg-gradient-to-br from-amber-500 to-amber-600"
-                    shadowColor="shadow-amber-500/30"
-                    icon={<svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>}
-                />
-                <StatCard 
                     title="Status Saya" 
-                    value={todayAttendance ? 'Clocked In' : 'Belum Absen'}
+                    value={todayAttendance ? 'Hadir' : 'Belum Absen'}
                     colorClass="bg-gradient-to-br from-indigo-500 to-indigo-600"
                     shadowColor="shadow-indigo-500/30"
                     icon={<svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>}
@@ -157,7 +150,7 @@ function SupervisorDashboard({ todayAttendance, pendingLeavesCount, teamCount, t
             <OfficeLocationCard office={office} />
 
             {/* Quick Links with Refined Style */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
                 <Link href={route('attendance.index')} className="group p-8 bg-white/40 hover:bg-white rounded-[2.5rem] border border-white transition-all duration-500 shadow-sm hover:shadow-2xl">
                     <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-inner">
                         <svg className="w-7 h-7 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -171,20 +164,7 @@ function SupervisorDashboard({ todayAttendance, pendingLeavesCount, teamCount, t
                         <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                     </div>
                     <h4 className="text-xl font-black text-slate-900 mb-2">Tim Saya</h4>
-                    <p className="text-slate-500 text-xs leading-relaxed font-medium">Pantau statistik, laporan kehadiran harian, dan aktivitas semua anggota tim.</p>
-                </Link>
-
-                <Link href={route('supervisor.leaves.index')} className="group p-8 bg-white/40 hover:bg-white rounded-[2.5rem] border border-white transition-all duration-500 shadow-sm hover:shadow-2xl relative overflow-hidden">
-                    {teamPendingLeaves > 0 && (
-                         <div className="absolute top-8 right-8 flex items-center justify-center w-8 h-8 rounded-full bg-rose-500 text-white font-black text-xs animate-pulse shadow-lg shadow-rose-500/30">
-                            {teamPendingLeaves}
-                         </div>
-                    )}
-                    <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-inner">
-                        <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    </div>
-                    <h4 className="text-xl font-black text-slate-900 mb-2">Persetujuan Izin</h4>
-                    <p className="text-slate-500 text-xs leading-relaxed font-medium">Lakukan validasi dan proses permohonan izin/cuti yang diajukan bawahan.</p>
+                    <p className="text-slate-500 text-xs leading-relaxed font-medium">Pantau kehadiran harian seluruh karyawan di kantor Anda.</p>
                 </Link>
             </div>
         </div>

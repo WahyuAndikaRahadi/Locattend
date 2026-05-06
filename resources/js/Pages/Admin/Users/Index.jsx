@@ -16,12 +16,11 @@ const QuickStat = ({ label, value, icon, color, iconColor }) => (
     </div>
 );
 
-export default function AdminUsersIndex({ users, filters, stats, offices, roles, supervisors }) {
+export default function AdminUsersIndex({ users, filters, stats, offices, roles }) {
     const [filterData, setFilterData] = useState({
         search: filters?.search || '',
         role: filters?.role || '',
         office_id: filters?.office_id || '',
-        supervisor_id: filters?.supervisor_id || '',
     });
 
     const handleFilterChange = (key, value) => {
@@ -120,7 +119,7 @@ export default function AdminUsersIndex({ users, filters, stats, offices, roles,
                             />
                         </form>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:w-3/5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:w-2/5">
                             {/* Role Filter */}
                             <select 
                                 value={filterData.role}
@@ -144,24 +143,12 @@ export default function AdminUsersIndex({ users, filters, stats, offices, roles,
                                     <option key={office.id} value={office.id}>{office.name}</option>
                                 ))}
                             </select>
-
-                            {/* Manager Filter */}
-                            <select 
-                                value={filterData.supervisor_id}
-                                onChange={(e) => handleFilterChange('supervisor_id', e.target.value)}
-                                className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl text-slate-700 font-bold focus:ring-4 focus:ring-primary-100 transition-all cursor-pointer appearance-none"
-                            >
-                                <option value="">Semua Manager</option>
-                                {supervisors.map(sup => (
-                                    <option key={sup.id} value={sup.id}>{sup.name}</option>
-                                ))}
-                            </select>
                         </div>
 
                         <button 
                             type="button" 
                             onClick={() => {
-                                const reset = { search: '', role: '', office_id: '', supervisor_id: '' };
+                                const reset = { search: '', role: '', office_id: '' };
                                 setFilterData(reset);
                                 router.get(route('admin.users.index'), reset);
                             }} 
@@ -181,7 +168,6 @@ export default function AdminUsersIndex({ users, filters, stats, offices, roles,
                                     <th className="py-6 px-8 text-xs font-black uppercase tracking-widest text-left uppercase">Profil Pengguna</th>
                                     <th className="py-6 px-6 text-xs font-black uppercase tracking-widest text-left uppercase">Hak Akses</th>
                                     <th className="py-6 px-6 text-xs font-black uppercase tracking-widest text-left uppercase">Lokasi Kerja</th>
-                                    <th className="py-6 px-6 text-xs font-black uppercase tracking-widest text-left uppercase">Manager</th>
                                     <th className="py-6 px-8 text-xs font-black uppercase tracking-widest text-right uppercase">Opsi</th>
                                 </tr>
                             </thead>
@@ -209,9 +195,6 @@ export default function AdminUsersIndex({ users, filters, stats, offices, roles,
                                         <td className="py-5 px-6 font-bold text-slate-700">
                                             {user.office?.name || '-'}
                                         </td>
-                                        <td className="py-5 px-6 font-bold text-slate-700">
-                                            {user.supervisor?.name || <span className="text-slate-300 font-medium">None</span>}
-                                        </td>
                                         <td className="py-5 px-8 text-right">
                                             <div className="flex justify-end gap-3 px-1">
                                                 <Link 
@@ -233,14 +216,14 @@ export default function AdminUsersIndex({ users, filters, stats, offices, roles,
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan="5" className="py-20 text-center">
+                                        <td colSpan="4" className="py-20 text-center">
                                             <div className="flex flex-col items-center opacity-30">
                                                 <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4 text-primary-500">
                                                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                                 </div>
                                                 <p className="text-slate-900 font-black uppercase tracking-widest text-sm">Tidak ada data ditemukan</p>
                                                 <button onClick={() => {
-                                                    const reset = { search: '', role: '', office_id: '', supervisor_id: '' };
+                                                    const reset = { search: '', role: '', office_id: '' };
                                                     setFilterData(reset);
                                                     router.get(route('admin.users.index'), reset);
                                                 }} className="text-primary-600 mt-2 font-bold hover:underline">Reset filter</button>
