@@ -25,6 +25,18 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
         longitude: '',
     });
 
+    // Auto-set position if already clocked in today
+    useEffect(() => {
+        if (todayAttendance && todayAttendance.latitude && todayAttendance.longitude) {
+            const clockedInPosition = {
+                latitude: parseFloat(todayAttendance.latitude),
+                longitude: parseFloat(todayAttendance.longitude)
+            };
+            setPosition(clockedInPosition);
+            setData(clockedInPosition);
+        }
+    }, [todayAttendance]);
+
     const { data: clockOutData, setData: setClockOutData, post: postClockOut, processing: clockOutProcessing, errors: clockOutErrors } = useForm({
         work_report: '',
     });
@@ -174,6 +186,39 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
                     </div>
                 </div>
 
+                {/* Full-width Work Schedule Section - Glassmorphism Style */}
+                <div className="bg-white/60 backdrop-blur-2xl rounded-[3rem] p-8 text-slate-900 shadow-2xl shadow-slate-200/50 relative overflow-hidden group border border-white">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700"></div>
+                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 sm:px-6">
+                        <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 bg-blue-600 rounded-[1.5rem] flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
+                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <div>
+                                <h4 className="text-2xl font-black tracking-tight leading-none mb-2">Jadwal Kerja Hari Ini</h4>
+                                <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em]">Operational Schedule</p>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-6 md:gap-12">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Shift Kerja</span>
+                                <span className="text-xl font-black text-slate-800 font-mono tracking-tighter">{workSchedule?.clock_in || '08:00'} — {workSchedule?.clock_out || '17:00'}</span>
+                            </div>
+                            <div className="w-px h-10 bg-slate-200 hidden sm:block"></div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Toleransi</span>
+                                <span className="text-xl font-black text-slate-800 font-mono tracking-tighter">15 Menit</span>
+                            </div>
+                            <div className="w-px h-10 bg-slate-200 hidden sm:block"></div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status Hari</span>
+                                <span className="text-sm font-black px-4 py-1 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100 uppercase tracking-widest">Aktif</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Left Column: Interactive Map Panel */}
                     <div className="lg:col-span-7 space-y-8">
@@ -319,29 +364,6 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
                                 </div>
                             </div>
                         )}
-                        
-                        {/* Work Schedule Summary Card */}
-                        <div className="bg-gradient-to-br from-blue-600 to-indigo-800 rounded-[3rem] p-10 text-white shadow-2xl shadow-blue-600/30 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700"></div>
-                            <div className="relative z-10 space-y-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
-                                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    </div>
-                                    <h4 className="text-xl font-black tracking-tight">Jadwal Hari Ini</h4>
-                                </div>
-                                <div className="space-y-4 pt-2">
-                                    <div className="flex justify-between items-center pb-4 border-b border-white/10">
-                                        <span className="text-xs font-bold text-blue-100 uppercase tracking-widest">Jam Kerja</span>
-                                        <span className="text-sm font-black font-mono">{workSchedule?.clock_in || '08:00'} - {workSchedule?.clock_out || '17:00'}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs font-bold text-blue-100 uppercase tracking-widest">Toleransi</span>
-                                        <span className="text-sm font-black font-mono">15 Menit</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 

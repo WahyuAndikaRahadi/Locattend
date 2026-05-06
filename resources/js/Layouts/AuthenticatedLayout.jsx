@@ -16,11 +16,13 @@ const navigation = {
     karyawan: [
         { name: 'Dashboard', href: 'dashboard', icon: Icons.Dashboard },
         { name: 'Absensi', href: 'attendance.index', icon: Icons.Absensi },
+        { name: 'Riwayat Absensi', href: 'attendance.history', icon: Icons.Riwayat },
         { name: 'Izin/Cuti', href: 'leaves.index', icon: Icons.Izin },
     ],
     supervisor: [
         { name: 'Dashboard', href: 'dashboard', icon: Icons.Dashboard },
         { name: 'Absensi', href: 'attendance.index', icon: Icons.Absensi },
+        { name: 'Riwayat Absensi', href: 'attendance.history', icon: Icons.Riwayat },
         { name: 'Tim Saya', href: 'supervisor.team', icon: Icons.Tim },
         { name: 'Jadwal Tim', href: 'supervisor.schedule', icon: Icons.Jadwal },
         { name: 'Izin/Cuti', href: 'leaves.index', icon: Icons.Izin },
@@ -172,23 +174,51 @@ export default function AuthenticatedLayout({ header, children }) {
             {/* Main Content */}
             <div className="lg:pl-72">
                 {/* Top Bar */}
-                <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-dark-100">
-                    <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4">
-                        <div className="flex items-center gap-4">
+                <header className="sticky top-0 z-30 bg-white/40 backdrop-blur-2xl border-b border-white/20">
+                    <div className="flex items-center justify-between px-6 lg:px-10 h-20">
+                        <div className="flex items-center gap-6">
                             <button
                                 onClick={() => setSidebarOpen(true)}
-                                className="lg:hidden p-2 rounded-xl hover:bg-dark-100 transition-colors"
+                                className="lg:hidden p-2.5 rounded-2xl bg-white/50 border border-white shadow-sm text-slate-600 hover:text-blue-600 transition-all"
                             >
-                                <svg className="w-6 h-6 text-dark-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" /></svg>
                             </button>
-                            {header && <div className="text-xl font-bold text-dark-900">{header}</div>}
+                            
+                            <div className="hidden md:block">
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">
+                                    <span>Main</span>
+                                    <svg className="w-2.5 h-2.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"/></svg>
+                                    <span className="text-blue-600">{header}</span>
+                                </div>
+                                <h2 className="text-xl font-black text-slate-900 tracking-tight leading-none">{header}</h2>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="hidden sm:flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 text-sm font-semibold text-slate-600">
-                                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                <span>{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+
+                        <div className="flex items-center gap-4">
+                            {/* Search Bar Placeholder */}
+                            <div className="hidden xl:flex items-center gap-3 px-5 py-2.5 bg-slate-100/50 rounded-2xl border border-slate-200/50 group focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/10 transition-all">
+                                <svg className="w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                <input type="text" placeholder="Cari sesuatu..." className="bg-transparent border-none p-0 text-xs font-bold text-slate-600 focus:ring-0 placeholder:text-slate-400 w-48" />
+                                <span className="text-[10px] font-black text-slate-300 border border-slate-200 px-1.5 py-0.5 rounded-md">⌘K</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <button className="relative p-2.5 rounded-2xl bg-white border border-slate-100 shadow-sm text-slate-500 hover:text-blue-600 hover:shadow-md transition-all group">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                    <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 border-2 border-white rounded-full animate-pulse"></span>
+                                </button>
+                                
+                                <div className="h-10 w-px bg-slate-200/60 mx-1 hidden sm:block"></div>
+                                
+                                <div className="hidden sm:flex items-center gap-3 pl-1">
+                                    <div className="text-right">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Hari ini</p>
+                                        <p className="text-xs font-black text-slate-700 tracking-tight">{new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                    </div>
+                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100 text-indigo-600 shadow-inner">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

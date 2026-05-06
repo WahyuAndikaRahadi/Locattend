@@ -5,7 +5,7 @@ import {
     PieChart, Pie, Cell, Legend
 } from 'recharts';
 
-const AdminDashboard = ({ stats, attendanceTrends, officeStats }) => {
+const AdminDashboard = ({ totalUsers, totalOffices, todayTotalAttendance, totalOnLeaveToday, totalPendingLeaves, attendanceTrends, recentActivities }) => {
     const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
     
     return (
@@ -13,10 +13,10 @@ const AdminDashboard = ({ stats, attendanceTrends, officeStats }) => {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {[
-                    { label: 'Total Karyawan', value: stats.total_employees, icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', color: 'blue' },
-                    { label: 'Hadir Hari Ini', value: stats.present_today, icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'emerald' },
-                    { label: 'Terlambat', value: stats.late_today, icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', color: 'rose' },
-                    { label: 'Izin / Cuti', value: stats.on_leave_today, icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', color: 'amber' }
+                    { label: 'Total Karyawan', value: totalUsers, icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', color: 'blue' },
+                    { label: 'Hadir Hari Ini', value: todayTotalAttendance, icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'emerald' },
+                    { label: 'Izin / Cuti', value: totalOnLeaveToday, icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', color: 'amber' },
+                    { label: 'Menunggu Review', value: totalPendingLeaves, icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', color: 'rose' }
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-8 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 hover:scale-105 transition-all duration-500 group">
                         <div className={`w-14 h-14 bg-${stat.color}-50 text-${stat.color}-600 rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:rotate-6 transition-transform`}>
@@ -88,27 +88,21 @@ const AdminDashboard = ({ stats, attendanceTrends, officeStats }) => {
                     </div>
                 </div>
 
-                {/* Office Stats */}
+                {/* Recent Activity */}
                 <div className="lg:col-span-4 bg-white p-10 rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-slate-100 flex flex-col">
-                    <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-8">Distribusi Kantor</h3>
-                    <div className="flex-1 h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={officeStats}
-                                    innerRadius={80}
-                                    outerRadius={120}
-                                    paddingAngle={8}
-                                    dataKey="count"
-                                >
-                                    {officeStats.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend verticalAlign="bottom" align="center" iconType="circle" />
-                            </PieChart>
-                        </ResponsiveContainer>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-8">Aktivitas Terbaru</h3>
+                    <div className="space-y-6">
+                        {recentActivities.map((activity) => (
+                            <div key={activity.id} className="flex items-center gap-4 p-4 hover:bg-slate-50 rounded-2xl transition-colors group">
+                                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-black text-slate-900 truncate">{activity.user_name}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{activity.time}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -116,14 +110,14 @@ const AdminDashboard = ({ stats, attendanceTrends, officeStats }) => {
     );
 };
 
-const SupervisorDashboard = ({ teamStats, pendingLeaves }) => {
+const SupervisorDashboard = ({ teamCount, teamPresentToday, teamOnLeaveToday, teamPendingLeaves }) => {
     return (
         <div className="space-y-12 animate-fade-in">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {[
-                    { label: 'Total Anggota Tim', value: teamStats.total_members, icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', color: 'indigo' },
-                    { label: 'Hadir Hari Ini', value: teamStats.present_today, icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'emerald' },
-                    { label: 'Menunggu Review', value: pendingLeaves, icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', color: 'amber' }
+                    { label: 'Total Anggota Tim', value: teamCount, icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', color: 'indigo' },
+                    { label: 'Hadir Hari Ini', value: teamPresentToday, icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'emerald' },
+                    { label: 'Menunggu Review', value: teamPendingLeaves, icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', color: 'amber' }
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-10 rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-slate-100 hover:scale-105 transition-all duration-500 group">
                         <div className={`w-16 h-16 bg-${stat.color}-50 text-${stat.color}-600 rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:rotate-6 transition-transform`}>
@@ -146,13 +140,13 @@ const SupervisorDashboard = ({ teamStats, pendingLeaves }) => {
                     </Link>
                 </div>
                 
-                {pendingLeaves > 0 ? (
+                {teamPendingLeaves > 0 ? (
                     <div className="flex items-center gap-6 p-8 bg-amber-50 rounded-[2.5rem] border border-amber-100 animate-pulse">
                         <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-amber-600 shadow-sm">
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         </div>
                         <div>
-                            <h4 className="text-xl font-black text-amber-900 tracking-tight">Ada {pendingLeaves} pengajuan menunggu</h4>
+                            <h4 className="text-xl font-black text-amber-900 tracking-tight">Ada {teamPendingLeaves} pengajuan menunggu</h4>
                             <p className="text-amber-700/70 font-bold uppercase text-[10px] tracking-widest">Persetujuan Supervisor Diperlukan</p>
                         </div>
                     </div>
@@ -169,44 +163,58 @@ const SupervisorDashboard = ({ teamStats, pendingLeaves }) => {
     );
 };
 
-const KaryawanDashboard = () => {
+const KaryawanDashboard = ({ attendanceStatus, attendanceStatusBadge, pendingLeavesCount, office }) => {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Link href={route('attendance.index')} className="group bg-white p-10 sm:p-14 rounded-[3.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 hover:border-blue-200 transition-all duration-500 overflow-hidden relative">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-blue-500/10 transition-colors"></div>
-                <div className="relative z-10">
-                    <div className="w-16 h-16 bg-blue-50 rounded-[1.5rem] flex items-center justify-center mb-8 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500 shadow-inner">
-                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        <div className="space-y-10 animate-fade-in">
+            {/* Main Action Card */}
+            <Link href={route('attendance.index')} className="group bg-white p-10 sm:p-14 rounded-[3.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 hover:border-blue-200 transition-all duration-500 overflow-hidden relative block">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-blue-500/10 transition-colors"></div>
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                    <div className="flex items-center gap-6">
+                        <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center text-blue-600 shadow-inner group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500">
+                            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </div>
+                        <div>
+                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Status Kehadiran Hari Ini</span>
+                            <h4 className="text-3xl font-black text-slate-900 tracking-tight">{attendanceStatus || 'Belum Absen'}</h4>
+                            {attendanceStatusBadge && (
+                                <span className="inline-flex mt-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg font-bold text-[10px] uppercase tracking-widest border border-emerald-100">
+                                    {attendanceStatusBadge}
+                                </span>
+                            )}
+                        </div>
                     </div>
-                    <h4 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Presensi Hari Ini</h4>
-                    <p className="text-slate-500 text-lg leading-relaxed font-medium italic opacity-80">"Disiplin adalah jembatan antara tujuan dan pencapaian."</p>
-                    <div className="mt-8 flex items-center gap-3 text-blue-600 font-black text-xs uppercase tracking-widest">
-                        Buka Halaman Presensi
-                        <svg className="w-5 h-5 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    <div className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-600/30 group-hover:scale-105 transition-all text-center">
+                        Buka Panel Presensi
                     </div>
                 </div>
             </Link>
 
-            <div className="grid grid-cols-1 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <Link href={route('leaves.index')} className="group bg-white p-10 rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-slate-100 hover:scale-[1.02] transition-all duration-500 flex items-center gap-8">
-                    <div className="w-16 h-16 bg-emerald-50 rounded-[1.5rem] flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-inner">
-                        <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-inner">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     </div>
                     <div>
-                        <h4 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">Izin & Cuti</h4>
+                        <div className="flex items-center gap-2">
+                            <h4 className="text-2xl font-black text-slate-900 tracking-tight">Izin & Cuti</h4>
+                            {pendingLeavesCount > 0 && (
+                                <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-0.5 rounded-lg animate-pulse">{pendingLeavesCount} Pending</span>
+                            )}
+                        </div>
                         <p className="text-slate-500 text-sm font-medium">Ajukan atau cek status izin Anda.</p>
                     </div>
                 </Link>
 
-                <Link href={route('supervisor.employees.index')} className="group bg-white p-10 rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-slate-100 hover:scale-[1.02] transition-all duration-500 flex items-center gap-8">
-                    <div className="w-16 h-16 bg-amber-50 rounded-[1.5rem] flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-inner">
-                        <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <div className="group bg-white p-10 rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-slate-100 flex items-center gap-8">
+                    <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                     </div>
                     <div>
-                        <h4 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">Monitor Tim</h4>
-                        <p className="text-slate-500 text-sm font-medium leading-relaxed">Pantau aktivitas dan kehadiran tim.</p>
+                        <h4 className="text-2xl font-black text-slate-900 tracking-tight">Lokasi Kerja</h4>
+                        <p className="text-slate-500 font-medium text-sm">{office?.name || 'Kantor Pusat'}</p>
                     </div>
-                </Link>
+                </div>
             </div>
         </div>
     );
@@ -229,6 +237,10 @@ export default function Dashboard(props) {
                     
                     <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
                         <div className="max-w-2xl animate-slide-down">
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/10 text-white/80 text-[10px] font-black uppercase tracking-[0.3em] mb-6">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                System Online
+                            </div>
                             <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight leading-tight mb-4">
                                 Selamat Datang Kembali, <br/>
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">{user.name}!</span>
