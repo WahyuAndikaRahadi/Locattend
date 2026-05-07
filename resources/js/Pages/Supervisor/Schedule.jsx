@@ -60,6 +60,16 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
         return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
     };
 
+    const formatLateMinutes = (minutes) => {
+        if (!minutes) return '0 menit';
+        if (minutes >= 60) {
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            return `${h} jam${m > 0 ? ` ${m} menit` : ''}`;
+        }
+        return `${minutes} menit`;
+    };
+
     const isToday = date === new Date().toISOString().split('T')[0];
 
     // Daily stats
@@ -92,8 +102,7 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
         let matchStatus = true;
         
         if (filterStatus !== 'Semua Status' && activeTab === 'daily') {
-            if (filterStatus === 'Hadir') matchStatus = member.status === 'hadir' && !member.is_late;
-            else if (filterStatus === 'Terlambat') matchStatus = member.status === 'hadir' && member.is_late;
+            if (filterStatus === 'Hadir') matchStatus = member.status === 'hadir';
             else if (filterStatus === 'Izin') matchStatus = member.status === 'izin';
             else if (filterStatus === 'Alpha') matchStatus = member.status === 'alpha';
             else if (filterStatus === 'Libur') matchStatus = member.status === 'libur';
@@ -371,7 +380,6 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
                                 >
                                     <option value="Semua Status">Semua Status</option>
                                     <option value="Hadir">Hadir</option>
-                                    <option value="Terlambat">Terlambat</option>
                                     <option value="Izin">Izin</option>
                                     <option value="Alpha">Alpha</option>
                                     <option value="Libur">Libur</option>
@@ -417,12 +425,18 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
                                                         <p className="text-sm font-bold text-slate-900">{member.name}</p>
                                                         <p className="text-xs text-slate-400">{member.email}</p>
                                                     </td>
-                                                    <td className="px-4 py-5 text-center">
-                                                        {member.status === 'hadir' && !member.is_late && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-100 text-emerald-700">Hadir</span>}
-                                                        {member.status === 'hadir' && member.is_late && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-amber-100 text-amber-700">Terlambat</span>}
-                                                        {member.status === 'izin' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-sky-100 text-sky-700">Izin</span>}
-                                                        {member.status === 'alpha' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-red-100 text-red-700">Alpha</span>}
-                                                        {member.status === 'libur' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 text-slate-700">Libur</span>}
+                                                    <td className="px-4 py-5 text-center flex flex-col items-center justify-center">
+                                                        <div>
+                                                            {member.status === 'hadir' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-100 text-emerald-700">Hadir</span>}
+                                                            {member.status === 'izin' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-sky-100 text-sky-700">Izin</span>}
+                                                            {member.status === 'alpha' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-red-100 text-red-700">Alpha</span>}
+                                                            {member.status === 'libur' && <span className="inline-flex px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 text-slate-700">Libur</span>}
+                                                        </div>
+                                                        {member.is_inside_radius === false && (
+                                                            <span className="text-[10px] text-rose-500 font-bold italic mt-1 text-center leading-tight">
+                                                                (Clock in di luar<br/>area kantor)
+                                                            </span>
+                                                        )}
                                                     </td>
                                                     <td className="px-4 py-5 text-center">
                                                         {isPresent ? <span className="text-sm font-bold text-slate-700 font-mono">{member.clock_in_time ? formatTime(member.clock_in_time) : "—"}</span> : <span className="text-sm text-slate-300">—</span>}
@@ -437,8 +451,15 @@ export default function SupervisorSchedule({ dailyData, monthlyData, selectedDat
                                                         {isPresent && member.work_report ? <p className="text-sm text-slate-600 truncate max-w-[200px] mx-auto" title={member.work_report}>{member.work_report}</p> : <span className="text-sm text-slate-300">—</span>}
                                                     </td>
                                                     <td className="px-4 py-5">
-                                                        {member.status === 'hadir' && !member.is_late && <span className="text-sm text-slate-300">—</span>}
-                                                        {member.status === 'hadir' && member.is_late && <span className="text-sm text-orange-500 font-medium italic">Terlambat</span>}
+                                                        {member.status === 'hadir' && member.is_inside_radius === false && member.outside_radius_reason ? (
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs text-rose-600 italic">"Di luar area: {member.outside_radius_reason}"</span>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                {member.status === 'hadir' && <span className="text-sm text-slate-300">—</span>}
+                                                            </>
+                                                        )}
                                                         {member.status === 'izin' && <span className="text-sm text-slate-500 italic">"{member.leave_reason || "—"}"</span>}
                                                         {(member.status === 'alpha' || member.status === 'libur') && <span className="text-sm text-slate-300">—</span>}
                                                     </td>

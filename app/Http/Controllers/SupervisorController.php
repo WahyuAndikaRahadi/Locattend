@@ -165,10 +165,17 @@ class SupervisorController extends Controller
             $leave = $dailyLeaves->get($member->id);
 
             $isLate = false;
+            $lateMinutes = 0;
             if ($attendance && $member->office?->workSchedule?->clock_in_time) {
                 $clockIn = Carbon::parse($attendance->clock_in_time);
                 $startTime = Carbon::parse($member->office->workSchedule->clock_in_time);
                 $isLate = $clockIn->greaterThan($startTime);
+                if ($isLate) {
+                    $lateMinutes = $clockIn->diffInMinutes($startTime);
+                }
+            } elseif ($attendance && $attendance->is_late) {
+                $isLate = true;
+                $lateMinutes = $attendance->late_minutes;
             }
 
             if ($attendance) {
@@ -191,7 +198,10 @@ class SupervisorController extends Controller
                 'duration_minutes' => $attendance?->duration_minutes,
                 'work_report' => $attendance?->work_report,
                 'is_late' => $isLate,
+                'late_minutes' => $lateMinutes,
                 'leave_reason' => $leave?->reason,
+                'is_inside_radius' => $attendance?->is_inside_radius,
+                'outside_radius_reason' => $attendance?->outside_radius_reason,
             ];
         });
 
@@ -496,7 +506,7 @@ class SupervisorController extends Controller
                     }
 
                     if ($isLate || $attendance->is_late) {
-                        $status = 'terlambat';
+                        $status = 'hadir';
                         $terlambatCount++;
                         $hadirCount++; 
                         
@@ -506,7 +516,14 @@ class SupervisorController extends Controller
                         } else {
                             $lateMins = $attendance->late_minutes ?? 0;
                         }
-                        $keterangan = "Terlambat {$lateMins} menit";
+
+                        if ($lateMins >= 60) {
+                            $lateHours = intdiv($lateMins, 60);
+                            $lateRemainder = $lateMins % 60;
+                            $keterangan = "{$lateHours} jam" . ($lateRemainder > 0 ? " {$lateRemainder} menit" : "");
+                        } else {
+                            $keterangan = "{$lateMins} menit";
+                        }
                     } else {
                         $status = 'hadir';
                         $hadirCount++;

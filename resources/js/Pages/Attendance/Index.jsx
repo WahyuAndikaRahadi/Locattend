@@ -9,9 +9,12 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
     const [locationError, setLocationError] = useState('');
     const [gettingLocation, setGettingLocation] = useState(false);
     const [showClockOutModal, setShowClockOutModal] = useState(false);
+    const [showRestrictionModal, setShowRestrictionModal] = useState(false);
     const [canClockOutEnabled, setCanClockOutEnabled] = useState(false);
     const [clockOutMessage, setClockOutMessage] = useState('');
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [showExplanationModal, setShowExplanationModal] = useState(false);
+    const [explanationReason, setExplanationReason] = useState('');
     const { errors } = usePage().props;
 
     // Digital Clock Effect
@@ -23,6 +26,7 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
     const { data, setData, post, processing } = useForm({
         latitude: '',
         longitude: '',
+        outside_radius_reason: '',
     });
 
     // Auto-set position if already clocked in today
@@ -69,24 +73,73 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
         );
     }, [setData]);
 
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371e3; // Earth's radius in meters
+        const φ1 = lat1 * Math.PI / 180;
+        const φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c;
+    };
+
     const handleClockIn = (e) => {
         e.preventDefault();
         if (!position) {
             setLocationError('Silakan ambil lokasi terlebih dahulu.');
             return;
         }
+        
+        // Check if outside radius
+        if (office && office.latitude && office.longitude) {
+            const distance = calculateDistance(position.latitude, position.longitude, office.latitude, office.longitude);
+            if (distance > office.radius_meters) {
+                setShowExplanationModal(true);
+                return;
+            }
+        }
+        
         post(route('attendance.clockIn'));
     };
 
-    const checkCanClockOut = useCallback(() => {
+    const handleExplanationSubmit = (e) => {
+        e.preventDefault();
+        if (!explanationReason || explanationReason.length < 10) return;
+        
+        setData('outside_radius_reason', explanationReason);
+        post(route('attendance.clockIn'), {
+            onSuccess: () => {
+                setShowExplanationModal(false);
+                setExplanationReason('');
+            }
+        });
+    };
+
+    const handleClockOutClick = () => {
+        setGettingLocation(true); // Reuse this for loading state
         fetch(route('attendance.canClockOut'))
             .then(res => res.json())
             .then(data => {
+                setGettingLocation(false);
                 setCanClockOutEnabled(data.canClockOut);
                 setClockOutMessage(data.message);
+                
+                if (data.canClockOut) {
+                    setShowClockOutModal(true);
+                } else {
+                    setShowRestrictionModal(true);
+                }
             })
-            .catch(err => console.error('Error checking clock out status:', err));
-    }, []);
+            .catch(err => {
+                setGettingLocation(false);
+                console.error('Error checking clock out status:', err);
+            });
+    };
 
     const handleClockOutSubmit = (e) => {
         e.preventDefault();
@@ -104,6 +157,17 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
 
     const formatDateFull = (date) => {
         return date.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    };
+
+    const formatLateMinutes = (minutes) => {
+        const absMinutes = Math.abs(minutes || 0);
+        if (absMinutes === 0) return '0 menit';
+        if (absMinutes >= 60) {
+            const h = Math.floor(absMinutes / 60);
+            const m = absMinutes % 60;
+            return `${h} jam${m > 0 ? ` ${m} menit` : ''}`;
+        }
+        return `${absMinutes} menit`;
     };
 
     const statusConfig = {
@@ -170,15 +234,17 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
                             
                             {todayAttendance && !todayAttendance.clock_out_time && (
                                 <button
-                                    onClick={() => {
-                                        checkCanClockOut();
-                                        setShowClockOutModal(true);
-                                    }}
-                                    className="w-full px-8 py-5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg transition-all active:scale-95"
+                                    onClick={handleClockOutClick}
+                                    disabled={gettingLocation}
+                                    className="w-full px-8 py-5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg transition-all active:scale-95 disabled:opacity-50"
                                 >
                                     <span className="flex items-center justify-center gap-3">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                                        Clock Out Sekarang
+                                        {gettingLocation ? (
+                                            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        ) : (
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                                        )}
+                                        {gettingLocation ? 'Mengecek Jadwal...' : 'Clock Out Sekarang'}
                                     </span>
                                 </button>
                             )}
@@ -351,14 +417,21 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl">
                                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Status Kehadiran</span>
-                                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${statusConfig[todayAttendance.status]?.color}`}>
-                                            {statusConfig[todayAttendance.status]?.label}
-                                        </span>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${statusConfig[todayAttendance.status]?.color}`}>
+                                                {statusConfig[todayAttendance.status]?.label}
+                                            </span>
+                                            {todayAttendance.is_inside_radius === false && (
+                                                <span className="text-[10px] text-rose-500 font-bold italic">
+                                                    (Clock in di luar area kantor)
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     {todayAttendance.is_late && (
                                         <div className="flex items-center justify-between p-5 bg-rose-50 border border-rose-100 rounded-2xl">
                                             <span className="text-xs font-black text-rose-400 uppercase tracking-widest">Keterlambatan</span>
-                                            <span className="text-xs font-black text-rose-600 uppercase tracking-widest">{todayAttendance.late_minutes} Menit</span>
+                                            <span className="text-xs font-black text-rose-600 uppercase tracking-widest">{formatLateMinutes(todayAttendance.late_minutes)}</span>
                                         </div>
                                     )}
                                 </div>
@@ -397,12 +470,19 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
                                                 <p className="text-sm font-black text-slate-900">
                                                     {new Date(att.date).toLocaleDateString('id-ID', { weekday: 'long' })}
                                                 </p>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
-                                                        att.status === 'hadir' ? (att.is_late ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700') : 'bg-slate-200 text-slate-600'
-                                                    }`}>
-                                                        {att.status} {att.is_late && '• Terlambat'}
-                                                    </span>
+                                                <div className="flex flex-col items-start gap-1 mt-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                                                            att.status === 'hadir' ? (att.is_late ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700') : 'bg-slate-200 text-slate-600'
+                                                        }`}>
+                                                            {att.status}
+                                                        </span>
+                                                    </div>
+                                                    {att.is_inside_radius === false && (
+                                                        <span className="text-[10px] text-rose-500 font-bold italic mt-0.5">
+                                                            (Clock in di luar area kantor)
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -500,6 +580,99 @@ export default function AttendanceIndex({ office, workSchedule, todayAttendance,
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Explanation Modal for Outside Radius Clock In */}
+            {showExplanationModal && (
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 sm:p-10">
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl" onClick={() => !processing && setShowExplanationModal(false)}></div>
+                    <div className="relative w-full max-w-xl bg-white/90 backdrop-blur-2xl rounded-[4rem] p-10 sm:p-14 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border border-white/50 overflow-hidden animate-slide-up">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-orange-500/10 rounded-full blur-2xl -ml-10 -mb-10"></div>
+                        
+                        <div className="relative z-10 space-y-10">
+                            <div className="flex items-center gap-8">
+                                <div className="w-20 h-20 bg-amber-500 text-white rounded-[2rem] flex items-center justify-center shadow-lg">
+                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-3">Di Luar Area</h3>
+                                    <p className="text-slate-500 font-semibold text-lg">Anda berada di luar radius kantor. Berikan alasan.</p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleExplanationSubmit} className="space-y-8">
+                                <div className="space-y-4">
+                                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-2">Alasan Clock In di Luar Area *</label>
+                                    <textarea
+                                        value={explanationReason}
+                                        onChange={(e) => {
+                                            setExplanationReason(e.target.value);
+                                            setData('outside_radius_reason', e.target.value);
+                                        }}
+                                        placeholder="Contoh: Bertemu klien, WFH, dinas luar kota, dll."
+                                        className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-3xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 focus:bg-white transition-all text-slate-700 font-medium text-lg resize-none min-h-[140px]"
+                                    />
+                                    <div className="flex justify-between px-2">
+                                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">
+                                            {errors.outside_radius_reason}
+                                        </p>
+                                        <p className={`text-[10px] font-black uppercase tracking-widest ${explanationReason.length >= 10 ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                            {explanationReason.length} / 10 Karakter Minimal
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowExplanationModal(false)}
+                                        disabled={processing}
+                                        className="flex-1 px-8 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest transition-all disabled:opacity-50"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={processing || explanationReason.length < 10}
+                                        className="flex-[2] px-8 py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95 disabled:opacity-50"
+                                    >
+                                        {processing ? 'Memproses...' : 'Kirim Presensi'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Restriction Modal - Early Clock Out Warning */}
+            {showRestrictionModal && (
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 sm:p-10">
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl" onClick={() => setShowRestrictionModal(false)}></div>
+                    <div className="relative w-full max-w-lg bg-white/90 backdrop-blur-2xl rounded-[4rem] p-10 sm:p-14 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border border-white/50 overflow-hidden animate-bounce-in">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                        
+                        <div className="relative z-10 space-y-8 text-center">
+                            <div className="mx-auto w-24 h-24 bg-rose-100 text-rose-600 rounded-[2.5rem] flex items-center justify-center shadow-inner">
+                                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <h3 className="text-3xl font-black text-slate-900 tracking-tight leading-none">Belum Waktunya Pulang</h3>
+                                <p className="text-slate-500 font-semibold text-lg px-2">
+                                    {clockOutMessage}
+                                </p>
+                            </div>
+
+                            <button
+                                onClick={() => setShowRestrictionModal(false)}
+                                className="w-full px-8 py-5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95"
+                            >
+                                Oke, Saya Mengerti
+                            </button>
                         </div>
                     </div>
                 </div>

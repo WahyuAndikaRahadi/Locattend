@@ -42,6 +42,7 @@ class AttendanceController extends Controller
         $request->validate([
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
+            'outside_radius_reason' => 'nullable|string|min:10|max:500',
         ]);
 
         $user = $request->user();
@@ -66,10 +67,11 @@ class AttendanceController extends Controller
         $lng = $request->longitude;
         $office = $user->office;
 
-        if (!$office->isWithinRadius($lat, $lng)) {
-            $distance = round($office->calculateDistance($lat, $lng));
+        $isInsideRadius = $office->isWithinRadius($lat, $lng);
+        // If outside radius, reason is required
+        if (!$isInsideRadius && empty($request->outside_radius_reason)) {
             return back()->withErrors([
-                'location' => "Anda berada di luar radius kantor. Jarak Anda: {$distance}m (Radius: {$office->radius_meters}m)."
+                'outside_radius_reason' => 'Alasan clock in di luar area kantor wajib diisi.'
             ]);
         }
 
@@ -83,11 +85,11 @@ class AttendanceController extends Controller
 
         if ($office->workSchedule) {
             $scheduleClockInTime = Carbon::createFromTimeString($office->workSchedule->clock_in_time, 'Asia/Jakarta');
-            $nowTime = $now->setTimeFromTimeString($clockInTime, 'Asia/Jakarta');
+            $nowTime = $now->copy()->setTimeFromTimeString($clockInTime, 'Asia/Jakarta');
 
             if ($nowTime->isAfter($scheduleClockInTime)) {
                 $isLate = true;
-                $lateMinutes = $nowTime->diffInMinutes($scheduleClockInTime);
+                $lateMinutes = abs($nowTime->diffInMinutes($scheduleClockInTime));
             }
         }
 
@@ -101,6 +103,8 @@ class AttendanceController extends Controller
             'long_in' => $lng,
             'is_late' => $isLate,
             'late_minutes' => $lateMinutes,
+            'is_inside_radius' => $isInsideRadius,
+            'outside_radius_reason' => $isInsideRadius ? null : $request->outside_radius_reason,
         ]);
 
         $statusLabel = $isLate ? "Terlambat ({$lateMinutes} menit)" : 'Tepat Waktu';
@@ -141,10 +145,20 @@ class AttendanceController extends Controller
 
         // Compare times
         if ($now->isBefore($scheduleClockOutTime)) {
-            $minutesUntilClockOut = $now->diffInMinutes($scheduleClockOutTime);
+            $minutesUntilClockOut = (int) $now->diffInMinutes($scheduleClockOutTime);
+            
+            $durationText = "";
+            if ($minutesUntilClockOut >= 60) {
+                $hours = intdiv($minutesUntilClockOut, 60);
+                $minutes = $minutesUntilClockOut % 60;
+                $durationText = "{$hours} jam" . ($minutes > 0 ? " {$minutes} menit" : "");
+            } else {
+                $durationText = "{$minutesUntilClockOut} menit";
+            }
+
             return response()->json([
                 'canClockOut' => false,
-                'message' => "Clock out baru bisa dilakukan setelah pukul {$scheduleClockOutTime->format('H:i')}. Tunggu {$minutesUntilClockOut} menit lagi.",
+                'message' => "Clock out baru bisa dilakukan setelah pukul {$scheduleClockOutTime->format('H:i')}. Tunggu {$durationText} lagi.",
                 'clockOutTime' => $scheduleClockOutTime->format('H:i'),
             ]);
         }

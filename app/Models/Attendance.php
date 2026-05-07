@@ -22,6 +22,8 @@ class Attendance extends Model
         'late_minutes',
         'lat_in',
         'long_in',
+        'is_inside_radius',
+        'outside_radius_reason',
     ];
 
     protected function casts(): array
@@ -31,6 +33,7 @@ class Attendance extends Model
             'lat_in' => 'decimal:7',
             'long_in' => 'decimal:7',
             'is_late' => 'boolean',
+            'is_inside_radius' => 'boolean',
         ];
     }
 
